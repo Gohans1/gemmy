@@ -8,7 +8,7 @@ If your plugin does not need CSS, delete this file.
 */
 
 :root {
-	--gemmy-size: 80px;
+	--gemmy-size: 180px;
 }
 
 .gemmy-container {
