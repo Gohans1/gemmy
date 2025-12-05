@@ -30,7 +30,7 @@ If your plugin does not need CSS, delete this file.
 .gemmy-container[aria-label]::before {
 	--background-modifier-message: #ffffcb;
 	content: attr(aria-label);
-	color: #202020;
+	color: #202021;
 	font-size: var(--font-ui-medium);
 	border-radius: 20px;
 	padding: var(--size-4-3) var(--size-4-6);
