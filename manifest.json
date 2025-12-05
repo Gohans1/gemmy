@@ -1,9 +1,9 @@
 {
-	"id": "gemmy",
-	"name": "Gemmy",
-	"version": "1.0.1",
+	"id": "idgohansgemmy",
+	"name": "GohansGemmy",
+	"version": "1.0",
 	"minAppVersion": "0.15.0",
-	"description": "2023 April Fool's plugin brought to you by Obsidian",
+	"description": "Gohans KapilGupta",
 	"author": "Obsidian",
 	"authorUrl": "https://obsidian.md",
 	"fundingUrl": "https://obsidian.md/pricing",

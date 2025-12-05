@@ -8,32 +8,33 @@ If your plugin does not need CSS, delete this file.
 */
 
 :root {
-        --gemmy-size: 80px;
+	--gemmy-size: 80px;
 }
 
 .gemmy-container {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
+	position: fixed;
+	bottom: 30px;
+	right: 30px;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
 }
 
 .gemmy-container img {
-        width: var(--gemmy-size);
-        height: var(--gemmy-size);
-        border-radius: var(--gemmy-size);
+	width: var(--gemmy-size);
+	height: var(--gemmy-size);
+	border-radius: var(--gemmy-size);
 }
 
 .gemmy-container[aria-label]::before {
-        --background-modifier-message: #FFFFCB;
-        content: attr(aria-label);
-        color: #202020;
-        font-size: var(--font-ui-medium);
-        border-radius: 20px;
-        padding: var(--size-4-3) var(--size-4-6);
-        width: 150px;
-        background: var(--background-modifier-message);
-    }
-    
+	--background-modifier-message: #ffffcb;
+	content: attr(aria-label);
+	color: #202020;
+	font-size: var(--font-ui-medium);
+	border-radius: 20px;
+	padding: var(--size-4-3) var(--size-4-6);
+	width: 150px;
+	background: var(--background-modifier-message);
+
+	white-space: pre-wrap;
+}
