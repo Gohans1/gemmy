@@ -14,10 +14,11 @@ If your plugin does not need CSS, delete this file.
 .gemmy-container {
 	position: fixed;
 	bottom: 30px;
-	right: 30px;
+	left: 30px; /* <--- ĐỔI THÀNH 'left' */
 	display: flex;
 	flex-direction: column;
-	align-items: flex-end;
+	align-items: flex-start; /* <--- ĐỔI THÀNH 'flex-start' */
+	gap: 8px;
 }
 
 .gemmy-container img {
