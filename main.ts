@@ -191,11 +191,7 @@ export default class Gemmy extends Plugin {
 	}
 
 	startNextIdleTimeout() {
-		// if the set time is 5 minutes, this will set timeout to be a random time between 4-6 minutes
-		// the range will be 80% - 120%
-		let randomFactor = 0.8 + 0.4 * Math.random();
-		let randomizedTimeout =
-			randomFactor * this.settings.idleTalkFrequency * 60000;
+		const fixedTimeout = 15000;
 
 		if (this.idleTimeout) {
 			window.clearTimeout(this.idleTimeout);
@@ -208,7 +204,7 @@ export default class Gemmy extends Plugin {
 
 			this.saySomething(ALL_QUOTES, false);
 			this.startNextIdleTimeout();
-		}, randomizedTimeout);
+		}, fixedTimeout);
 	}
 
 	saySomething(quotes: string[], persistent: boolean) {
