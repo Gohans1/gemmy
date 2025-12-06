@@ -1,13 +1,18 @@
-import { App, debounce, Plugin, PluginSettingTab, Setting } from "obsidian";
+import {
+	App,
+	debounce,
+	Plugin,
+	PluginSettingTab,
+	Setting,
+	Notice,
+} from "obsidian";
 import * as data from "./quotes_corrected.json";
 import KAPILGUPTA_STATIC from "./kapilgupta.png";
 
 const ALL_QUOTES = data.quotes;
 
 interface GemmySettings {
-	// how often does Gemmy talk in idle mode, in minutes
 	idleTalkFrequency: number;
-	// the number of minutes you must write before Gemmy appears to mock you
 	writingModeGracePeriod: number;
 }
 
@@ -22,93 +27,128 @@ export default class Gemmy extends Plugin {
 	settings: GemmySettings;
 	gemmyEl: HTMLElement;
 	imageEl: HTMLElement;
+	chatBubbleEl: HTMLElement;
+	bubbleContentEl: HTMLElement;
+	copyButtonEl: HTMLElement;
 	inWritingMode: boolean = false;
 	idleTimeout: number;
-	chatBubbleEl: HTMLElement; // THÊM CÁI LỒN NÀY VÀO
 	writingModeTimeout: number;
 	appeared: boolean = false;
 
 	async onload() {
 		await this.loadSettings();
 
+		// TẠO ELEMENT
 		let gemmyEl = (this.gemmyEl = createDiv("gemmy-container"));
-		// VỨT HẾT MẤY CÁI ARIA-LABEL XÀM CẶC ĐI
-
 		this.imageEl = gemmyEl.createEl("img", {});
-
-		// ĐÂY, TẠO RA NÓ ĐÂY
 		this.chatBubbleEl = gemmyEl.createDiv({
 			cls: ["gemmy-bubble", "hidden"],
 		});
+		this.bubbleContentEl = this.chatBubbleEl.createDiv({
+			cls: "gemmy-bubble-content",
+		});
+		this.copyButtonEl = this.chatBubbleEl.createEl("button", {
+			cls: "gemmy-copy-button",
+			text: "Copy",
+		});
 
-		// ... (code addCommand các kiểu giữ nguyên)
+		// GẮN LOGIC COPY VÀO NÚT
+		this.copyButtonEl.onclick = () => {
+			const textToCopy = this.bubbleContentEl.innerText;
+			navigator.clipboard
+				.writeText(textToCopy)
+				.then(() => {
+					new Notice("Copied!");
+				})
+				.catch((err) => {
+					console.error("Gemmy: Could not copy text: ", err);
+					new Notice("Failed to copy.");
+				});
+		};
 
-		// SỬA LẠI MẤY CÁI EVENT LISTENER
+		// ĐĂNG KÝ COMMANDS
+		this.addCommand({
+			id: "show",
+			name: "Show Gemmy",
+			callback: () => this.appear(),
+		});
+		this.addCommand({
+			id: "hide",
+			name: "Hide Gemmy",
+			callback: () => this.disappear(),
+		});
+		this.addCommand({
+			id: "enter-writing-mode",
+			name: "Enter writing mode",
+			callback: () => this.enterWritingMode(),
+		});
+		this.addCommand({
+			id: "leave-writing-mode",
+			name: "Leave writing mode",
+			callback: () => this.leaveWritingMode(),
+		});
 
-		// debounce editor-change event on workspace
+		this.addSettingTab(new GemmySettingTab(this.app, this));
+
+		// ĐĂNG KÝ EVENT CHO EDITOR
 		this.registerEvent(
 			this.app.workspace.on(
 				"editor-change",
 				debounce(() => {
-					if (!this.inWritingMode) {
-						return;
-					}
-
+					if (!this.inWritingMode) return;
 					this.disappear();
 					this.setWritingModeTimeout();
 				}, 500),
 			),
 		);
-		// Thêm cái này vào cuối hàm onload()
+
+		// ĐẶT LỊCH SỦA ĐỊNH KỲ 15 GIÂY
 		this.registerInterval(
 			window.setInterval(() => {
 				if (this.appeared && !this.inWritingMode) {
 					this.saySomething(ALL_QUOTES);
 				}
-			}, 15000), // 15000 milliseconds = 15 giây
+			}, 15000),
 		);
+
+		// CHO PHÉP KÉO THẢ
 		this.makeDraggable(this.gemmyEl);
+
+		// CHỜ APP SẴN SÀNG RỒI HIỆN RA
 		app.workspace.onLayoutReady(this.appear.bind(this));
 	}
 
 	appear() {
 		let { gemmyEl, imageEl } = this;
-
-		imageEl.setAttribute("src", KAPILGUPTA_STATIC); // Thay hết bằng ảnh tĩnh
-		this.appeared = true; // Cho nó hiện ra luôn, chờ cái lồn gì nữa
-
+		imageEl.setAttribute("src", KAPILGUPTA_STATIC);
+		this.appeared = true;
 		document.body.appendChild(gemmyEl);
 		gemmyEl.show();
-	}
 
-	disappear() {
-		this.idleTimeout && window.clearTimeout(this.idleTimeout);
-		this.writingModeTimeout && window.clearTimeout(this.writingModeTimeout);
-
-		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
-
-		// VỨT MẸ CÁI dispatchEvent ĐI, THAY BẰNG CÁI NÀY
-		this.chatBubbleEl.addClass("hidden");
-
-		this.gemmyEl.hide();
-		this.appeared = false;
+		// SỦA CÂU ĐẦU TIÊN
 		if (!this.inWritingMode) {
 			this.saySomething(ALL_QUOTES);
 		}
 	}
 
+	disappear() {
+		this.idleTimeout && window.clearTimeout(this.idleTimeout);
+		this.writingModeTimeout && window.clearTimeout(this.writingModeTimeout);
+		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
+		this.chatBubbleEl.addClass("hidden");
+		this.gemmyEl.hide();
+		this.appeared = false;
+	}
+
 	enterWritingMode() {
 		this.inWritingMode = true;
-
 		this.disappear();
-
 		this.setWritingModeTimeout();
 	}
 
 	leaveWritingMode() {
 		this.inWritingMode = false;
 		this.disappear();
-
 		window.clearTimeout(this.writingModeTimeout);
 	}
 
@@ -116,30 +156,23 @@ export default class Gemmy extends Plugin {
 		if (this.writingModeTimeout) {
 			window.clearTimeout(this.writingModeTimeout);
 		}
-
 		this.writingModeTimeout = window.setTimeout(() => {
-			if (!this.inWritingMode) {
-				return;
-			}
-
+			if (!this.inWritingMode) return;
 			this.appear();
 		}, this.settings.writingModeGracePeriod * 1000);
 	}
 
-	// Sửa thành như này
 	saySomething(quotes: string[]) {
-		// Vứt mẹ `persistent` đi
 		if (!this.appeared) {
 			return;
 		}
 
 		let randomThing = quotes[Math.floor(Math.random() * quotes.length)];
-
-		this.chatBubbleEl.innerText = randomThing;
+		this.bubbleContentEl.innerText = randomThing;
 		this.chatBubbleEl.removeClass("hidden");
 		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
 
-		// Luôn luôn tự động ẩn
+		// TỰ ẨN BONG BÓNG SAU 5 GIÂY
 		setTimeout(() => {
 			this.chatBubbleEl.addClass("hidden");
 		}, BUBBLE_DURATION);
@@ -166,55 +199,41 @@ export default class Gemmy extends Plugin {
 			pos2 = 0,
 			pos3 = 0,
 			pos4 = 0;
-
 		const dragMouseDown = (e: MouseEvent) => {
 			e = e || window.event;
 			e.preventDefault();
-			// Lấy vị trí chuột lúc nhấn xuống
 			pos3 = e.clientX;
 			pos4 = e.clientY;
-			// Đăng ký event khi thả chuột và di chuột trên toàn bộ document
 			document.onmouseup = closeDragElement;
 			document.onmousemove = elementDrag;
 		};
-
 		const elementDrag = (e: MouseEvent) => {
 			e = e || window.event;
 			e.preventDefault();
-			// Tính toán vị trí mới của con trỏ
 			pos1 = pos3 - e.clientX;
 			pos2 = pos4 - e.clientY;
 			pos3 = e.clientX;
 			pos4 = e.clientY;
-			// Set vị trí mới cho element
 			elmnt.style.top = elmnt.offsetTop - pos2 + "px";
 			elmnt.style.left = elmnt.offsetLeft - pos1 + "px";
 		};
-
 		const closeDragElement = () => {
-			// Dừng theo dõi khi thả chuột
 			document.onmouseup = null;
 			document.onmousemove = null;
 		};
-
-		// Gắn event mousedown vào chính cái ảnh hoặc cả container
 		this.imageEl.onmousedown = dragMouseDown;
 	}
 }
 
 class GemmySettingTab extends PluginSettingTab {
 	plugin: Gemmy;
-
 	constructor(app: App, plugin: Gemmy) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
-
 	display(): void {
 		const { containerEl } = this;
-
 		containerEl.empty();
-
 		new Setting(containerEl)
 			.setName("Idle talk frequency")
 			.setDesc("How often does Gemmy speak when idle, in minutes.")
@@ -228,7 +247,6 @@ class GemmySettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-
 		new Setting(containerEl)
 			.setName("Writing mode grace period")
 			.setDesc(
