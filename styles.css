@@ -19,6 +19,37 @@ If your plugin does not need CSS, delete this file.
 	flex-direction: column;
 	align-items: flex-start; /* <--- ĐỔI THÀNH 'flex-start' */
 	gap: 8px;
+	cursor: move; /* Thêm dòng này */
+}
+
+.gemmy-bubble {
+	position: absolute;
+	bottom: 110%; /* Đẩy nó lên trên đầu con Gemmy */
+	left: 50%;
+	transform: translateX(-50%); /* Căn giữa cho nó đẹp */
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	padding: 8px 12px;
+	border-radius: 8px;
+	width: max-content; /* Độ rộng tự co giãn theo nội dung */
+	max-width: 300px; /* Nhưng đéo được rộng quá */
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	user-select: text; /* Cực kỳ quan trọng, cho phép bôi đen */
+	opacity: 1;
+	transition: opacity 0.2s ease-in-out;
+	pointer-events: all; /* Cho phép click, bôi đen các kiểu */
+}
+
+/* Thêm cái mũi tên nhỏ cho nó giống bong bóng chat thật */
+.gemmy-bubble::after {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	margin-left: -5px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: var(--background-primary) transparent transparent transparent;
 }
 
 .gemmy-container img {

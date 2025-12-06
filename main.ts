@@ -24,6 +24,7 @@ export default class Gemmy extends Plugin {
 	imageEl: HTMLElement;
 	inWritingMode: boolean = false;
 	idleTimeout: number;
+	chatBubbleEl: HTMLElement; // THÊM CÁI LỒN NÀY VÀO
 	writingModeTimeout: number;
 	appeared: boolean = false;
 
@@ -31,65 +32,18 @@ export default class Gemmy extends Plugin {
 		await this.loadSettings();
 
 		let gemmyEl = (this.gemmyEl = createDiv("gemmy-container"));
-		gemmyEl.setAttribute("aria-label-position", "top");
-		gemmyEl.setAttribute("aria-label-delay", "0");
-		gemmyEl.setAttribute("aria-label-classes", "gemmy-tooltip");
+		// VỨT HẾT MẤY CÁI ARIA-LABEL XÀM CẶC ĐI
 
 		this.imageEl = gemmyEl.createEl("img", {});
 
-		this.addCommand({
-			id: "show",
-			name: "Show Gemmy",
-			callback: () => {
-				this.appear();
-			},
+		// ĐÂY, TẠO RA NÓ ĐÂY
+		this.chatBubbleEl = gemmyEl.createDiv({
+			cls: ["gemmy-bubble", "hidden"],
 		});
 
-		this.addCommand({
-			id: "hide",
-			name: "Hide Gemmy",
-			callback: () => {
-				this.disappear();
-			},
-		});
+		// ... (code addCommand các kiểu giữ nguyên)
 
-		this.addCommand({
-			id: "enter-writing-mode",
-			name: "Enter writing mode",
-			callback: () => {
-				this.enterWritingMode();
-			},
-		});
-
-		this.addCommand({
-			id: "leave-writing-mode",
-			name: "Leave writing mode",
-			callback: () => {
-				this.leaveWritingMode();
-			},
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new GemmySettingTab(this.app, this));
-
-		this.gemmyEl.addEventListener("mouseenter", () => {
-			if (this.inWritingMode) {
-				return;
-			}
-
-			this.saySomething(ALL_QUOTES, true);
-			this.idleTimeout && clearTimeout(this.idleTimeout);
-		});
-		this.gemmyEl.addEventListener("mouseleave", () => {
-			if (this.inWritingMode) {
-				return;
-			}
-
-			this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
-			this.startNextIdleTimeout();
-		});
-
-		this.startNextIdleTimeout();
+		// SỬA LẠI MẤY CÁI EVENT LISTENER
 
 		// debounce editor-change event on workspace
 		this.registerEvent(
@@ -105,7 +59,15 @@ export default class Gemmy extends Plugin {
 				}, 500),
 			),
 		);
-
+		// Thêm cái này vào cuối hàm onload()
+		this.registerInterval(
+			window.setInterval(() => {
+				if (this.appeared && !this.inWritingMode) {
+					this.saySomething(ALL_QUOTES);
+				}
+			}, 15000), // 15000 milliseconds = 15 giây
+		);
+		this.makeDraggable(this.gemmyEl);
 		app.workspace.onLayoutReady(this.appear.bind(this));
 	}
 
@@ -123,20 +85,16 @@ export default class Gemmy extends Plugin {
 		this.idleTimeout && window.clearTimeout(this.idleTimeout);
 		this.writingModeTimeout && window.clearTimeout(this.writingModeTimeout);
 
-		// Vứt mẹ animation đi, ảnh nào thì cũng là ảnh tĩnh thôi
 		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
-		// remote tooltip
-		this.gemmyEl.dispatchEvent(
-			new MouseEvent("mouseout", {
-				bubbles: true,
-				clientX: 10,
-				clientY: 10,
-			}),
-		);
 
-		// Ẩn luôn và ngay, chờ cái lồn gì nữa
+		// VỨT MẸ CÁI dispatchEvent ĐI, THAY BẰNG CÁI NÀY
+		this.chatBubbleEl.addClass("hidden");
+
 		this.gemmyEl.hide();
 		this.appeared = false;
+		if (!this.inWritingMode) {
+			this.saySomething(ALL_QUOTES);
+		}
 	}
 
 	enterWritingMode() {
@@ -168,55 +126,23 @@ export default class Gemmy extends Plugin {
 		}, this.settings.writingModeGracePeriod * 1000);
 	}
 
-	startNextIdleTimeout() {
-		const fixedTimeout = 15000;
-
-		if (this.idleTimeout) {
-			window.clearTimeout(this.idleTimeout);
-		}
-
-		this.idleTimeout = window.setTimeout(() => {
-			if (this.inWritingMode) {
-				return;
-			}
-
-			this.saySomething(ALL_QUOTES, false);
-			this.startNextIdleTimeout();
-		}, fixedTimeout);
-	}
-
-	saySomething(quotes: string[], persistent: boolean) {
+	// Sửa thành như này
+	saySomething(quotes: string[]) {
+		// Vứt mẹ `persistent` đi
 		if (!this.appeared) {
 			return;
 		}
 
 		let randomThing = quotes[Math.floor(Math.random() * quotes.length)];
 
-		this.gemmyEl.setAttr("aria-label", randomThing);
-		this.gemmyEl.setAttr("aria-label-position", "top");
-		this.gemmyEl.dispatchEvent(
-			new MouseEvent("mouseover", {
-				bubbles: true,
-				clientX: 10,
-				clientY: 10,
-			}),
-		);
-
-		// Ảnh lúc lồn nào cũng là 1, đéo cần if else xàm cặc
+		this.chatBubbleEl.innerText = randomThing;
+		this.chatBubbleEl.removeClass("hidden");
 		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
 
-		if (!persistent) {
-			// Chỉ lo ẩn cái bubble thôi, ảnh đéo cần đổi
-			setTimeout(() => {
-				this.gemmyEl.dispatchEvent(
-					new MouseEvent("mouseout", {
-						bubbles: true,
-						clientX: 10,
-						clientY: 10,
-					}),
-				);
-			}, BUBBLE_DURATION);
-		}
+		// Luôn luôn tự động ẩn
+		setTimeout(() => {
+			this.chatBubbleEl.addClass("hidden");
+		}, BUBBLE_DURATION);
 	}
 
 	onunload() {
@@ -233,6 +159,46 @@ export default class Gemmy extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	makeDraggable(elmnt: HTMLElement) {
+		let pos1 = 0,
+			pos2 = 0,
+			pos3 = 0,
+			pos4 = 0;
+
+		const dragMouseDown = (e: MouseEvent) => {
+			e = e || window.event;
+			e.preventDefault();
+			// Lấy vị trí chuột lúc nhấn xuống
+			pos3 = e.clientX;
+			pos4 = e.clientY;
+			// Đăng ký event khi thả chuột và di chuột trên toàn bộ document
+			document.onmouseup = closeDragElement;
+			document.onmousemove = elementDrag;
+		};
+
+		const elementDrag = (e: MouseEvent) => {
+			e = e || window.event;
+			e.preventDefault();
+			// Tính toán vị trí mới của con trỏ
+			pos1 = pos3 - e.clientX;
+			pos2 = pos4 - e.clientY;
+			pos3 = e.clientX;
+			pos4 = e.clientY;
+			// Set vị trí mới cho element
+			elmnt.style.top = elmnt.offsetTop - pos2 + "px";
+			elmnt.style.left = elmnt.offsetLeft - pos1 + "px";
+		};
+
+		const closeDragElement = () => {
+			// Dừng theo dõi khi thả chuột
+			document.onmouseup = null;
+			document.onmousemove = null;
+		};
+
+		// Gắn event mousedown vào chính cái ảnh hoặc cả container
+		this.imageEl.onmousedown = dragMouseDown;
 	}
 }
 
