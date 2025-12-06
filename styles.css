@@ -14,39 +14,50 @@ If your plugin does not need CSS, delete this file.
 .gemmy-container {
 	position: fixed;
 	bottom: 30px;
-	left: 30px; /* <--- ĐỔI THÀNH 'left' */
+	left: 30px;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-start; /* <--- ĐỔI THÀNH 'flex-start' */
+	align-items: flex-start;
 	gap: 8px;
-	cursor: move; /* Thêm dòng này */
+	cursor: move;
 }
 
 .gemmy-bubble {
 	position: absolute;
-	bottom: 110%; /* Đẩy nó lên trên đầu con Gemmy */
+	bottom: 110%;
 	left: 50%;
-	transform: translateX(-50%); /* Căn giữa cho nó đẹp */
+	transform: translateX(-50%);
 	background-color: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	padding: 8px 12px;
-	padding-top: 30px; /* Thêm tí padding ở trên để có chỗ cho cái nút */
+	padding-top: 30px; /* Có chỗ cho mấy cái nút */
 	border-radius: 8px;
-	width: max-content; /* Độ rộng tự co giãn theo nội dung */
-	max-width: 300px; /* Nhưng đéo được rộng quá */
+	width: max-content;
+	max-width: 300px;
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-	user-select: text; /* Cực kỳ quan trọng, cho phép bôi đen */
+	user-select: text;
 	opacity: 1;
 	transition: opacity 0.2s ease-in-out;
-	pointer-events: all; /* Cho phép click, bôi đen các kiểu */
+	pointer-events: all;
 }
+
 .gemmy-bubble-content {
-	user-select: text; /* Cho phép bôi đen text */
+	user-select: text;
 }
+
+.gemmy-button-container {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	display: flex;
+	gap: 4px;
+}
+
+.gemmy-history-button,
 .gemmy-copy-button,
 .gemmy-next-button {
-	padding: 2px 6px;
-	font-size: 10px;
+	padding: 1px 6px; /* ĐÃ LÀM CHO NÓ "BẸP" ĐI RỒI ĐẤY THẰNG LỒN */
+	font-size: 16px; /* Cho chữ nhỏ lại tí cho nó cân đối */
 	background-color: var(--background-modifier-hover);
 	color: var(--text-muted);
 	border: 1px solid var(--background-modifier-border);
@@ -55,17 +66,24 @@ If your plugin does not need CSS, delete this file.
 	opacity: 0.7;
 }
 
+.gemmy-history-button:hover,
 .gemmy-copy-button:hover,
 .gemmy-next-button:hover {
 	opacity: 1;
 }
+
+.gemmy-history-button:hover {
+	background-color: var(--background-modifier-error);
+}
+
 .gemmy-copy-button:hover {
 	background-color: var(--background-modifier-success);
 }
+
 .gemmy-next-button:hover {
 	background-color: var(--interactive-accent-hover);
 }
-/* Thêm cái mũi tên nhỏ cho nó giống bong bóng chat thật */
+
 .gemmy-bubble::after {
 	content: "";
 	position: absolute;
@@ -83,22 +101,44 @@ If your plugin does not need CSS, delete this file.
 	border-radius: var(--gemmy-size);
 }
 
-.gemmy-container[aria-label]::before {
-	--background-modifier-message: #ffffcb;
-	content: attr(aria-label);
-	color: #202021;
-	font-size: var(--font-ui-medium);
-	border-radius: 20px;
-	padding: var(--size-4-3) var(--size-4-6);
-	width: 150px;
-	background: var(--background-modifier-message);
+/* === BỎ MẸ CÁI ĐỐNG ARIA-LABEL CŨ ĐI, ĐÉO CẦN NỮA === */
+/* .gemmy-container[aria-label]::before { ... } */
 
-	white-space: pre-wrap;
+/* === PHẦN THÊM VÀO CHO CÁI HISTORY MODAL NGU HỌC === */
+
+.modal-container ol {
+	padding-inline-start: 20px; /* Thụt đầu dòng cho cái danh sách số */
 }
-.gemmy-button-container {
-	position: absolute;
-	top: 4px;
-	right: 4px;
+
+.modal-container .gemmy-history-list li {
 	display: flex;
-	gap: 4px; /* Khoảng cách giữa 2 nút */
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+	gap: 16px;
+}
+
+.modal-container .gemmy-history-list li:last-child {
+	border-bottom: none;
+}
+
+.history-quote-text {
+	/* text nó tự chiếm hết chỗ còn lại rồi */
+}
+
+.history-copy-button {
+	flex-shrink: 0;
+	padding: 4px 10px;
+	font-size: 12px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.history-copy-button:hover {
+	background-color: var(--background-modifier-success);
+	color: var(--text-on-accent);
 }

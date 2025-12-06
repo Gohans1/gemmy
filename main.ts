@@ -5,6 +5,7 @@ import {
 	PluginSettingTab,
 	Setting,
 	Notice,
+	Modal,
 } from "obsidian";
 import * as data from "./quotes_corrected.json";
 import KAPILGUPTA_STATIC from "./kapilgupta.png";
@@ -31,18 +32,19 @@ export default class Gemmy extends Plugin {
 	bubbleContentEl: HTMLElement;
 	copyButtonEl: HTMLElement;
 	nextButtonEl: HTMLElement;
+	historyButtonEl: HTMLElement;
 	inWritingMode: boolean = false;
 	bubbleTimeout: number;
 	idleIntervalId: number;
 	writingModeTimeout: number;
 	appeared: boolean = false;
+	quoteHistory: string[] = [];
 
 	async onload() {
 		await this.loadSettings();
 
 		let gemmyEl = (this.gemmyEl = createDiv("gemmy-container"));
 		this.imageEl = gemmyEl.createEl("img", {});
-
 		this.chatBubbleEl = gemmyEl.createDiv({
 			cls: ["gemmy-bubble", "hidden"],
 		});
@@ -53,6 +55,10 @@ export default class Gemmy extends Plugin {
 		const buttonContainer = this.chatBubbleEl.createDiv({
 			cls: "gemmy-button-container",
 		});
+		this.historyButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-history-button",
+			text: "History",
+		});
 		this.copyButtonEl = buttonContainer.createEl("button", {
 			cls: "gemmy-copy-button",
 			text: "Copy",
@@ -61,6 +67,10 @@ export default class Gemmy extends Plugin {
 			cls: "gemmy-next-button",
 			text: "Next",
 		});
+
+		this.historyButtonEl.onclick = () => {
+			new HistoryModal(this.app, this.quoteHistory).open();
+		};
 
 		this.copyButtonEl.onclick = () => {
 			const textToCopy = this.bubbleContentEl.innerText;
@@ -114,9 +124,7 @@ export default class Gemmy extends Plugin {
 			),
 		);
 
-		// CHỖ NÀY ĐÃ XÓA startNextIdleTimeout()
 		this.resetIdleInterval();
-
 		this.makeDraggable(this.gemmyEl);
 		app.workspace.onLayoutReady(this.appear.bind(this));
 	}
@@ -179,6 +187,12 @@ export default class Gemmy extends Plugin {
 		if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
 
 		let randomThing = quotes[Math.floor(Math.random() * quotes.length)];
+
+		this.quoteHistory.unshift(randomThing);
+		if (this.quoteHistory.length > 5) {
+			this.quoteHistory.pop();
+		}
+
 		this.bubbleContentEl.innerText = randomThing;
 		this.chatBubbleEl.removeClass("hidden");
 		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
@@ -270,5 +284,47 @@ class GemmySettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+	}
+}
+
+class HistoryModal extends Modal {
+	history: string[];
+
+	constructor(app: App, history: string[]) {
+		super(app);
+		this.history = history;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl("h2", { text: "Last 5 Quotes" });
+
+		if (this.history.length === 0) {
+			contentEl.createEl("p", { text: "No history yet." });
+			return;
+		}
+
+		const listEl = contentEl.createEl("ol"); // ĐỔI SANG <ol>
+		for (const quote of this.history) {
+			const listItemEl = listEl.createEl("li");
+
+			listItemEl.createDiv({ text: quote, cls: "history-quote-text" });
+
+			const copyBtn = listItemEl.createEl("button", {
+				text: "Copy",
+				cls: "history-copy-button",
+			});
+
+			copyBtn.onclick = () => {
+				navigator.clipboard.writeText(quote).then(() => {
+					new Notice(`Copied: "${quote.slice(0, 20)}..."`);
+				});
+			};
+		}
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
 	}
 }
