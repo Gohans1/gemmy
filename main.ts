@@ -30,29 +30,38 @@ export default class Gemmy extends Plugin {
 	chatBubbleEl: HTMLElement;
 	bubbleContentEl: HTMLElement;
 	copyButtonEl: HTMLElement;
+	nextButtonEl: HTMLElement;
 	inWritingMode: boolean = false;
-	idleTimeout: number;
+	bubbleTimeout: number;
+	idleIntervalId: number;
 	writingModeTimeout: number;
 	appeared: boolean = false;
 
 	async onload() {
 		await this.loadSettings();
 
-		// TẠO ELEMENT
 		let gemmyEl = (this.gemmyEl = createDiv("gemmy-container"));
 		this.imageEl = gemmyEl.createEl("img", {});
+
 		this.chatBubbleEl = gemmyEl.createDiv({
 			cls: ["gemmy-bubble", "hidden"],
 		});
 		this.bubbleContentEl = this.chatBubbleEl.createDiv({
 			cls: "gemmy-bubble-content",
 		});
-		this.copyButtonEl = this.chatBubbleEl.createEl("button", {
+
+		const buttonContainer = this.chatBubbleEl.createDiv({
+			cls: "gemmy-button-container",
+		});
+		this.copyButtonEl = buttonContainer.createEl("button", {
 			cls: "gemmy-copy-button",
 			text: "Copy",
 		});
+		this.nextButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-next-button",
+			text: "Next",
+		});
 
-		// GẮN LOGIC COPY VÀO NÚT
 		this.copyButtonEl.onclick = () => {
 			const textToCopy = this.bubbleContentEl.innerText;
 			navigator.clipboard
@@ -66,7 +75,11 @@ export default class Gemmy extends Plugin {
 				});
 		};
 
-		// ĐĂNG KÝ COMMANDS
+		this.nextButtonEl.onclick = () => {
+			this.saySomething(ALL_QUOTES);
+			this.resetIdleInterval();
+		};
+
 		this.addCommand({
 			id: "show",
 			name: "Show Gemmy",
@@ -90,7 +103,6 @@ export default class Gemmy extends Plugin {
 
 		this.addSettingTab(new GemmySettingTab(this.app, this));
 
-		// ĐĂNG KÝ EVENT CHO EDITOR
 		this.registerEvent(
 			this.app.workspace.on(
 				"editor-change",
@@ -102,39 +114,39 @@ export default class Gemmy extends Plugin {
 			),
 		);
 
-		// ĐẶT LỊCH SỦA ĐỊNH KỲ 15 GIÂY
-		this.registerInterval(
-			window.setInterval(() => {
-				if (this.appeared && !this.inWritingMode) {
-					this.saySomething(ALL_QUOTES);
-				}
-			}, 15000),
-		);
+		// CHỖ NÀY ĐÃ XÓA startNextIdleTimeout()
+		this.resetIdleInterval();
 
-		// CHO PHÉP KÉO THẢ
 		this.makeDraggable(this.gemmyEl);
-
-		// CHỜ APP SẴN SÀNG RỒI HIỆN RA
 		app.workspace.onLayoutReady(this.appear.bind(this));
 	}
 
-	appear() {
-		let { gemmyEl, imageEl } = this;
-		imageEl.setAttribute("src", KAPILGUPTA_STATIC);
-		this.appeared = true;
-		document.body.appendChild(gemmyEl);
-		gemmyEl.show();
+	resetIdleInterval() {
+		if (this.idleIntervalId) {
+			window.clearInterval(this.idleIntervalId);
+		}
+		this.idleIntervalId = window.setInterval(() => {
+			if (this.appeared && !this.inWritingMode) {
+				this.saySomething(ALL_QUOTES);
+			}
+		}, 15000);
+		this.registerInterval(this.idleIntervalId);
+	}
 
-		// SỦA CÂU ĐẦU TIÊN
+	appear() {
+		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
+		this.appeared = true;
+		document.body.appendChild(this.gemmyEl);
+		this.gemmyEl.show();
+
 		if (!this.inWritingMode) {
 			this.saySomething(ALL_QUOTES);
 		}
 	}
 
 	disappear() {
-		this.idleTimeout && window.clearTimeout(this.idleTimeout);
 		this.writingModeTimeout && window.clearTimeout(this.writingModeTimeout);
-		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
+		this.bubbleTimeout && clearTimeout(this.bubbleTimeout);
 		this.chatBubbleEl.addClass("hidden");
 		this.gemmyEl.hide();
 		this.appeared = false;
@@ -163,17 +175,15 @@ export default class Gemmy extends Plugin {
 	}
 
 	saySomething(quotes: string[]) {
-		if (!this.appeared) {
-			return;
-		}
+		if (!this.appeared) return;
+		if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
 
 		let randomThing = quotes[Math.floor(Math.random() * quotes.length)];
 		this.bubbleContentEl.innerText = randomThing;
 		this.chatBubbleEl.removeClass("hidden");
 		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
 
-		// TỰ ẨN BONG BÓNG SAU 5 GIÂY
-		setTimeout(() => {
+		this.bubbleTimeout = window.setTimeout(() => {
 			this.chatBubbleEl.addClass("hidden");
 		}, BUBBLE_DURATION);
 	}
@@ -200,7 +210,6 @@ export default class Gemmy extends Plugin {
 			pos3 = 0,
 			pos4 = 0;
 		const dragMouseDown = (e: MouseEvent) => {
-			e = e || window.event;
 			e.preventDefault();
 			pos3 = e.clientX;
 			pos4 = e.clientY;
@@ -208,7 +217,6 @@ export default class Gemmy extends Plugin {
 			document.onmousemove = elementDrag;
 		};
 		const elementDrag = (e: MouseEvent) => {
-			e = e || window.event;
 			e.preventDefault();
 			pos1 = pos3 - e.clientX;
 			pos2 = pos4 - e.clientY;

@@ -43,10 +43,8 @@ If your plugin does not need CSS, delete this file.
 .gemmy-bubble-content {
 	user-select: text; /* Cho phép bôi đen text */
 }
-.gemmy-copy-button {
-	position: absolute; /* Bám vào thằng cha .gemmy-bubble */
-	top: 4px;
-	right: 4px;
+.gemmy-copy-button,
+.gemmy-next-button {
 	padding: 2px 6px;
 	font-size: 10px;
 	background-color: var(--background-modifier-hover);
@@ -57,9 +55,15 @@ If your plugin does not need CSS, delete this file.
 	opacity: 0.7;
 }
 
-.gemmy-copy-button:hover {
+.gemmy-copy-button:hover,
+.gemmy-next-button:hover {
 	opacity: 1;
+}
+.gemmy-copy-button:hover {
 	background-color: var(--background-modifier-success);
+}
+.gemmy-next-button:hover {
+	background-color: var(--interactive-accent-hover);
 }
 /* Thêm cái mũi tên nhỏ cho nó giống bong bóng chat thật */
 .gemmy-bubble::after {
@@ -90,4 +94,11 @@ If your plugin does not need CSS, delete this file.
 	background: var(--background-modifier-message);
 
 	white-space: pre-wrap;
+}
+.gemmy-button-container {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	display: flex;
+	gap: 4px; /* Khoảng cách giữa 2 nút */
 }
