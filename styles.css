@@ -29,8 +29,7 @@ If your plugin does not need CSS, delete this file.
 	transform: translateX(-50%);
 	background-color: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
-	padding: 8px 12px;
-	padding-top: 30px; /* Có chỗ cho mấy cái nút */
+	padding: 8px 12px 40px 12px; /* Top, Right, BOTTOM, Left */
 	border-radius: 8px;
 	width: max-content;
 	max-width: 300px;
@@ -47,7 +46,7 @@ If your plugin does not need CSS, delete this file.
 
 .gemmy-button-container {
 	position: absolute;
-	top: 4px;
+	bottom: 4px;
 	right: 4px;
 	display: flex;
 	gap: 4px;
@@ -70,18 +69,6 @@ If your plugin does not need CSS, delete this file.
 .gemmy-copy-button:hover,
 .gemmy-next-button:hover {
 	opacity: 1;
-}
-
-.gemmy-history-button:hover {
-	background-color: var(--background-modifier-error);
-}
-
-.gemmy-copy-button:hover {
-	background-color: var(--background-modifier-success);
-}
-
-.gemmy-next-button:hover {
-	background-color: var(--interactive-accent-hover);
 }
 
 .gemmy-bubble::after {
@@ -122,6 +109,14 @@ If your plugin does not need CSS, delete this file.
 .modal-container .gemmy-history-list li:last-child {
 	border-bottom: none;
 }
+.gemmy-quote-textarea {
+	width: 100%;
+	min-height: 200px;
+	margin-bottom: 10px;
+}
+.gemmy-view-all-button:hover {
+	background-color: var(--background-modifier-hover);
+}
 
 .history-quote-text {
 	/* text nó tự chiếm hết chỗ còn lại rồi */
@@ -139,6 +134,5 @@ If your plugin does not need CSS, delete this file.
 }
 
 .history-copy-button:hover {
-	background-color: var(--background-modifier-success);
-	color: var(--text-on-accent);
+	background-color: var(--background-modifier-hover);
 }

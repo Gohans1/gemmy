@@ -10,7 +10,8 @@ import {
 import * as data from "./quotes_corrected.json";
 import KAPILGUPTA_STATIC from "./kapilgupta.png";
 
-const ALL_QUOTES = data.quotes;
+// Cái này giờ chỉ là giá trị khởi tạo ban đầu
+const INITIAL_QUOTES = data.quotes;
 
 interface GemmySettings {
 	idleTalkFrequency: number;
@@ -22,10 +23,17 @@ const DEFAULT_SETTINGS: GemmySettings = {
 	writingModeGracePeriod: 5,
 };
 
+// Interface để lưu trữ dữ liệu
+interface GemmyData {
+	settings: GemmySettings;
+	quotes: string[];
+}
+
 const BUBBLE_DURATION = 5000;
 
 export default class Gemmy extends Plugin {
 	settings: GemmySettings;
+	allQuotes: string[] = []; // Biến chứa tất cả quotes, bao gồm cả quote mới
 	gemmyEl: HTMLElement;
 	imageEl: HTMLElement;
 	chatBubbleEl: HTMLElement;
@@ -33,6 +41,8 @@ export default class Gemmy extends Plugin {
 	copyButtonEl: HTMLElement;
 	nextButtonEl: HTMLElement;
 	historyButtonEl: HTMLElement;
+	addQuoteButtonEl: HTMLElement;
+	viewAllButtonEl: HTMLElement;
 	inWritingMode: boolean = false;
 	bubbleTimeout: number;
 	idleIntervalId: number;
@@ -41,7 +51,7 @@ export default class Gemmy extends Plugin {
 	quoteHistory: string[] = [];
 
 	async onload() {
-		await this.loadSettings();
+		await this.loadPluginData();
 
 		let gemmyEl = (this.gemmyEl = createDiv("gemmy-container"));
 		this.imageEl = gemmyEl.createEl("img", {});
@@ -51,9 +61,17 @@ export default class Gemmy extends Plugin {
 		this.bubbleContentEl = this.chatBubbleEl.createDiv({
 			cls: "gemmy-bubble-content",
 		});
-
 		const buttonContainer = this.chatBubbleEl.createDiv({
 			cls: "gemmy-button-container",
+		});
+
+		this.viewAllButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-view-all-button",
+			text: "View All",
+		});
+		this.addQuoteButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-add-button",
+			text: "Add",
 		});
 		this.historyButtonEl = buttonContainer.createEl("button", {
 			cls: "gemmy-history-button",
@@ -68,25 +86,27 @@ export default class Gemmy extends Plugin {
 			text: "Next",
 		});
 
-		this.historyButtonEl.onclick = () => {
+		this.viewAllButtonEl.onclick = () =>
+			new ViewAllQuotesModal(this.app, this.allQuotes).open();
+		this.addQuoteButtonEl.onclick = () => {
+			new AddQuoteModal(this.app, async (newQuotes) => {
+				const uniqueNewQuotes = newQuotes.filter(
+					(q) => !this.allQuotes.includes(q),
+				);
+				this.allQuotes.push(...uniqueNewQuotes);
+				await this.savePluginData();
+				new Notice(`${uniqueNewQuotes.length} new quote(s) saved!`);
+			}).open();
+		};
+		this.historyButtonEl.onclick = () =>
 			new HistoryModal(this.app, this.quoteHistory).open();
-		};
-
 		this.copyButtonEl.onclick = () => {
-			const textToCopy = this.bubbleContentEl.innerText;
 			navigator.clipboard
-				.writeText(textToCopy)
-				.then(() => {
-					new Notice("Copied!");
-				})
-				.catch((err) => {
-					console.error("Gemmy: Could not copy text: ", err);
-					new Notice("Failed to copy.");
-				});
+				.writeText(this.bubbleContentEl.innerText)
+				.then(() => new Notice("Copied!"));
 		};
-
 		this.nextButtonEl.onclick = () => {
-			this.saySomething(ALL_QUOTES);
+			this.saySomething();
 			this.resetIdleInterval();
 		};
 
@@ -112,7 +132,6 @@ export default class Gemmy extends Plugin {
 		});
 
 		this.addSettingTab(new GemmySettingTab(this.app, this));
-
 		this.registerEvent(
 			this.app.workspace.on(
 				"editor-change",
@@ -123,20 +142,15 @@ export default class Gemmy extends Plugin {
 				}, 500),
 			),
 		);
-
 		this.resetIdleInterval();
 		this.makeDraggable(this.gemmyEl);
 		app.workspace.onLayoutReady(this.appear.bind(this));
 	}
 
 	resetIdleInterval() {
-		if (this.idleIntervalId) {
-			window.clearInterval(this.idleIntervalId);
-		}
+		if (this.idleIntervalId) window.clearInterval(this.idleIntervalId);
 		this.idleIntervalId = window.setInterval(() => {
-			if (this.appeared && !this.inWritingMode) {
-				this.saySomething(ALL_QUOTES);
-			}
+			if (this.appeared && !this.inWritingMode) this.saySomething();
 		}, 15000);
 		this.registerInterval(this.idleIntervalId);
 	}
@@ -146,10 +160,7 @@ export default class Gemmy extends Plugin {
 		this.appeared = true;
 		document.body.appendChild(this.gemmyEl);
 		this.gemmyEl.show();
-
-		if (!this.inWritingMode) {
-			this.saySomething(ALL_QUOTES);
-		}
+		if (!this.inWritingMode) this.saySomething();
 	}
 
 	disappear() {
@@ -165,33 +176,29 @@ export default class Gemmy extends Plugin {
 		this.disappear();
 		this.setWritingModeTimeout();
 	}
-
 	leaveWritingMode() {
 		this.inWritingMode = false;
 		this.disappear();
 		window.clearTimeout(this.writingModeTimeout);
 	}
-
 	setWritingModeTimeout() {
-		if (this.writingModeTimeout) {
+		if (this.writingModeTimeout)
 			window.clearTimeout(this.writingModeTimeout);
-		}
 		this.writingModeTimeout = window.setTimeout(() => {
 			if (!this.inWritingMode) return;
 			this.appear();
 		}, this.settings.writingModeGracePeriod * 1000);
 	}
 
-	saySomething(quotes: string[]) {
+	saySomething() {
 		if (!this.appeared) return;
 		if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
+		if (this.allQuotes.length === 0) return;
 
-		let randomThing = quotes[Math.floor(Math.random() * quotes.length)];
-
+		let randomThing =
+			this.allQuotes[Math.floor(Math.random() * this.allQuotes.length)];
 		this.quoteHistory.unshift(randomThing);
-		if (this.quoteHistory.length > 5) {
-			this.quoteHistory.pop();
-		}
+		if (this.quoteHistory.length > 5) this.quoteHistory.pop();
 
 		this.bubbleContentEl.innerText = randomThing;
 		this.chatBubbleEl.removeClass("hidden");
@@ -206,16 +213,21 @@ export default class Gemmy extends Plugin {
 		this.disappear();
 	}
 
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData(),
-		);
+	async loadPluginData() {
+		const data: GemmyData = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings);
+		const savedQuotes = data?.quotes || [];
+		this.allQuotes = [...new Set([...INITIAL_QUOTES, ...savedQuotes])];
 	}
 
-	async saveSettings() {
-		await this.saveData(this.settings);
+	async savePluginData() {
+		const userQuotes = this.allQuotes.filter(
+			(q) => !INITIAL_QUOTES.includes(q),
+		);
+		await this.saveData({
+			settings: this.settings,
+			quotes: userQuotes,
+		});
 	}
 
 	makeDraggable(elmnt: HTMLElement) {
@@ -247,6 +259,7 @@ export default class Gemmy extends Plugin {
 	}
 }
 
+// ĐÂY LÀ PHẦN MÀY COPY THIẾU, THẰNG NGU
 class GemmySettingTab extends PluginSettingTab {
 	plugin: Gemmy;
 	constructor(app: App, plugin: Gemmy) {
@@ -256,6 +269,7 @@ class GemmySettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+
 		new Setting(containerEl)
 			.setName("Idle talk frequency")
 			.setDesc("How often does Gemmy speak when idle, in minutes.")
@@ -266,9 +280,10 @@ class GemmySettingTab extends PluginSettingTab {
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.idleTalkFrequency = value;
-						await this.plugin.saveSettings();
+						await this.plugin.savePluginData();
 					}),
 			);
+
 		new Setting(containerEl)
 			.setName("Writing mode grace period")
 			.setDesc(
@@ -281,7 +296,7 @@ class GemmySettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.writingModeGracePeriod)
 					.onChange(async (value) => {
 						this.plugin.settings.writingModeGracePeriod = value;
-						await this.plugin.saveSettings();
+						await this.plugin.savePluginData();
 					}),
 			);
 	}
@@ -289,32 +304,25 @@ class GemmySettingTab extends PluginSettingTab {
 
 class HistoryModal extends Modal {
 	history: string[];
-
 	constructor(app: App, history: string[]) {
 		super(app);
 		this.history = history;
 	}
-
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.createEl("h2", { text: "Last 5 Quotes" });
-
 		if (this.history.length === 0) {
 			contentEl.createEl("p", { text: "No history yet." });
 			return;
 		}
-
-		const listEl = contentEl.createEl("ol"); // ĐỔI SANG <ol>
+		const listEl = contentEl.createEl("ol");
 		for (const quote of this.history) {
 			const listItemEl = listEl.createEl("li");
-
 			listItemEl.createDiv({ text: quote, cls: "history-quote-text" });
-
 			const copyBtn = listItemEl.createEl("button", {
 				text: "Copy",
 				cls: "history-copy-button",
 			});
-
 			copyBtn.onclick = () => {
 				navigator.clipboard.writeText(quote).then(() => {
 					new Notice(`Copied: "${quote.slice(0, 20)}..."`);
@@ -322,9 +330,72 @@ class HistoryModal extends Modal {
 			};
 		}
 	}
-
 	onClose() {
+		this.contentEl.empty();
+	}
+}
+
+class AddQuoteModal extends Modal {
+	onSubmit: (quotes: string[]) => void;
+	constructor(app: App, onSubmit: (quotes: string[]) => void) {
+		super(app);
+		this.onSubmit = onSubmit;
+	}
+	onOpen() {
 		const { contentEl } = this;
-		contentEl.empty();
+		contentEl.createEl("h2", { text: "Add Your Quotes" });
+		contentEl.createEl("p", { text: "Enter each quote on a new line." });
+		const textarea = contentEl.createEl("textarea", {
+			cls: "gemmy-quote-textarea",
+		});
+		textarea.rows = 10;
+		new Setting(contentEl).addButton((btn) =>
+			btn
+				.setButtonText("Save")
+				.setCta()
+				.onClick(() => {
+					const quotes = textarea.value
+						.split("\n")
+						.filter((line) => line.trim() !== "");
+					this.onSubmit(quotes);
+					this.close();
+				}),
+		);
+	}
+	onClose() {
+		this.contentEl.empty();
+	}
+}
+
+class ViewAllQuotesModal extends Modal {
+	allQuotes: string[];
+	constructor(app: App, allQuotes: string[]) {
+		super(app);
+		this.allQuotes = allQuotes;
+	}
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl("h2", { text: "All Available Quotes" });
+		if (this.allQuotes.length === 0) {
+			contentEl.createEl("p", { text: "No quotes available." });
+			return;
+		}
+		const listEl = contentEl.createEl("ol");
+		for (const quote of this.allQuotes) {
+			const listItemEl = listEl.createEl("li");
+			listItemEl.createDiv({ text: quote, cls: "history-quote-text" });
+			const copyBtn = listItemEl.createEl("button", {
+				text: "Copy",
+				cls: "history-copy-button",
+			});
+			copyBtn.onclick = () => {
+				navigator.clipboard.writeText(quote).then(() => {
+					new Notice(`Copied: "${quote.slice(0, 20)}..."`);
+				});
+			};
+		}
+	}
+	onClose() {
+		this.contentEl.empty();
 	}
 }
