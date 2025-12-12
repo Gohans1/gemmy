@@ -52,7 +52,9 @@ If your plugin does not need CSS, delete this file.
 	gap: 4px;
 }
 
+.gemmy-view-all-button,
 .gemmy-history-button,
+.gemmy-add-button,
 .gemmy-copy-button,
 .gemmy-next-button {
 	padding: 1px 6px; /* ĐÃ LÀM CHO NÓ "BẸP" ĐI RỒI ĐẤY THẰNG LỒN */
@@ -65,7 +67,9 @@ If your plugin does not need CSS, delete this file.
 	opacity: 0.7;
 }
 
+.gemmy-view-all-button:hover,
 .gemmy-history-button:hover,
+.gemmy-add-button:hover,
 .gemmy-copy-button:hover,
 .gemmy-next-button:hover {
 	opacity: 1;
@@ -114,9 +118,6 @@ If your plugin does not need CSS, delete this file.
 	min-height: 200px;
 	margin-bottom: 10px;
 }
-.gemmy-view-all-button:hover {
-	background-color: var(--background-modifier-hover);
-}
 
 .history-quote-text {
 	/* text nó tự chiếm hết chỗ còn lại rồi */
@@ -135,4 +136,35 @@ If your plugin does not need CSS, delete this file.
 
 .history-copy-button:hover {
 	background-color: var(--background-modifier-hover);
+}
+
+/* New styles for the View All Quotes modal */
+.modal-container ol li {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+	gap: 16px;
+}
+
+.history-button-group {
+	display: flex;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.history-delete-button {
+	padding: 4px 10px;
+	font-size: 12px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-error); /* Red text for delete */
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.history-delete-button:hover {
+	background-color: var(--background-modifier-error);
+	color: var(--text-on-accent);
 }

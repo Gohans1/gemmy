@@ -7,20 +7,17 @@ import {
 	Notice,
 	Modal,
 } from "obsidian";
-import * as data from "./quotes_corrected.json";
 import KAPILGUPTA_STATIC from "./kapilgupta.png";
 
 // Cái này giờ chỉ là giá trị khởi tạo ban đầu
-const INITIAL_QUOTES = data.quotes;
+const INITIAL_QUOTES = [];
 
 interface GemmySettings {
 	idleTalkFrequency: number;
-	writingModeGracePeriod: number;
 }
 
 const DEFAULT_SETTINGS: GemmySettings = {
 	idleTalkFrequency: 5,
-	writingModeGracePeriod: 5,
 };
 
 // Interface để lưu trữ dữ liệu
@@ -43,10 +40,9 @@ export default class Gemmy extends Plugin {
 	historyButtonEl: HTMLElement;
 	addQuoteButtonEl: HTMLElement;
 	viewAllButtonEl: HTMLElement;
-	inWritingMode: boolean = false;
+	exportButtonEl: HTMLElement;
 	bubbleTimeout: number;
 	idleIntervalId: number;
-	writingModeTimeout: number;
 	appeared: boolean = false;
 	quoteHistory: string[] = [];
 
@@ -69,13 +65,13 @@ export default class Gemmy extends Plugin {
 			cls: "gemmy-view-all-button",
 			text: "View All",
 		});
-		this.addQuoteButtonEl = buttonContainer.createEl("button", {
-			cls: "gemmy-add-button",
-			text: "Add",
-		});
 		this.historyButtonEl = buttonContainer.createEl("button", {
 			cls: "gemmy-history-button",
 			text: "History",
+		});
+		this.addQuoteButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-add-button",
+			text: "Add",
 		});
 		this.copyButtonEl = buttonContainer.createEl("button", {
 			cls: "gemmy-copy-button",
@@ -87,19 +83,20 @@ export default class Gemmy extends Plugin {
 		});
 
 		this.viewAllButtonEl.onclick = () =>
-			new ViewAllQuotesModal(this.app, this.allQuotes).open();
-		this.addQuoteButtonEl.onclick = () => {
-			new AddQuoteModal(this.app, async (newQuotes) => {
-				const uniqueNewQuotes = newQuotes.filter(
-					(q) => !this.allQuotes.includes(q),
-				);
-				this.allQuotes.push(...uniqueNewQuotes);
-				await this.savePluginData();
-				new Notice(`${uniqueNewQuotes.length} new quote(s) saved!`);
-			}).open();
-		};
+			new ViewAllQuotesModal(this.app, this).open();
 		this.historyButtonEl.onclick = () =>
 			new HistoryModal(this.app, this.quoteHistory).open();
+		this.addQuoteButtonEl.onclick = () => {
+			new AddUserQuoteModal(this.app, async (newQuote) => {
+				if (!this.allQuotes.includes(newQuote)) {
+					this.allQuotes.push(newQuote);
+					await this.savePluginData();
+					new Notice("New quote saved!");
+				} else {
+					new Notice("This quote already exists.");
+				}
+			}).open();
+		};
 		this.copyButtonEl.onclick = () => {
 			navigator.clipboard
 				.writeText(this.bubbleContentEl.innerText)
@@ -120,28 +117,55 @@ export default class Gemmy extends Plugin {
 			name: "Hide Gemmy",
 			callback: () => this.disappear(),
 		});
+
 		this.addCommand({
-			id: "enter-writing-mode",
-			name: "Enter writing mode",
-			callback: () => this.enterWritingMode(),
+			id: "export-all-quotes",
+			name: "Export all quotes",
+			callback: () => {
+				const dataToExport = JSON.stringify(
+					{ quotes: this.allQuotes },
+					null,
+					2,
+				);
+				const blob = new Blob([dataToExport], {
+					type: "application/json",
+				});
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = "gemmy_all_quotes.json";
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+				new Notice("All quotes exported!");
+			},
 		});
+
 		this.addCommand({
-			id: "leave-writing-mode",
-			name: "Leave writing mode",
-			callback: () => this.leaveWritingMode(),
+			id: "add-quote",
+			name: "Add new quote",
+			callback: () => {
+				new AddQuoteModal(this.app, async (newQuotes) => {
+					const uniqueNewQuotes = newQuotes.filter(
+						(q) => !this.allQuotes.includes(q),
+					);
+					this.allQuotes.push(...uniqueNewQuotes);
+					await this.savePluginData();
+					new Notice(`${uniqueNewQuotes.length} new quote(s) saved!`);
+				}).open();
+			},
+		});
+
+		this.addCommand({
+			id: "import-quotes",
+			name: "Import quotes from file",
+			callback: () => {
+				new ImportModal(this.app, this).open();
+			},
 		});
 
 		this.addSettingTab(new GemmySettingTab(this.app, this));
-		this.registerEvent(
-			this.app.workspace.on(
-				"editor-change",
-				debounce(() => {
-					if (!this.inWritingMode) return;
-					this.disappear();
-					this.setWritingModeTimeout();
-				}, 500),
-			),
-		);
 		this.resetIdleInterval();
 		this.makeDraggable(this.gemmyEl);
 		app.workspace.onLayoutReady(this.appear.bind(this));
@@ -150,7 +174,7 @@ export default class Gemmy extends Plugin {
 	resetIdleInterval() {
 		if (this.idleIntervalId) window.clearInterval(this.idleIntervalId);
 		this.idleIntervalId = window.setInterval(() => {
-			if (this.appeared && !this.inWritingMode) this.saySomething();
+			if (this.appeared) this.saySomething();
 		}, 15000);
 		this.registerInterval(this.idleIntervalId);
 	}
@@ -160,34 +184,14 @@ export default class Gemmy extends Plugin {
 		this.appeared = true;
 		document.body.appendChild(this.gemmyEl);
 		this.gemmyEl.show();
-		if (!this.inWritingMode) this.saySomething();
+		this.saySomething();
 	}
 
 	disappear() {
-		this.writingModeTimeout && window.clearTimeout(this.writingModeTimeout);
 		this.bubbleTimeout && clearTimeout(this.bubbleTimeout);
 		this.chatBubbleEl.addClass("hidden");
 		this.gemmyEl.hide();
 		this.appeared = false;
-	}
-
-	enterWritingMode() {
-		this.inWritingMode = true;
-		this.disappear();
-		this.setWritingModeTimeout();
-	}
-	leaveWritingMode() {
-		this.inWritingMode = false;
-		this.disappear();
-		window.clearTimeout(this.writingModeTimeout);
-	}
-	setWritingModeTimeout() {
-		if (this.writingModeTimeout)
-			window.clearTimeout(this.writingModeTimeout);
-		this.writingModeTimeout = window.setTimeout(() => {
-			if (!this.inWritingMode) return;
-			this.appear();
-		}, this.settings.writingModeGracePeriod * 1000);
 	}
 
 	saySomething() {
@@ -216,17 +220,13 @@ export default class Gemmy extends Plugin {
 	async loadPluginData() {
 		const data: GemmyData = await this.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings);
-		const savedQuotes = data?.quotes || [];
-		this.allQuotes = [...new Set([...INITIAL_QUOTES, ...savedQuotes])];
+		this.allQuotes = data?.quotes || []; // Just load what's saved, or start fresh
 	}
 
 	async savePluginData() {
-		const userQuotes = this.allQuotes.filter(
-			(q) => !INITIAL_QUOTES.includes(q),
-		);
 		await this.saveData({
 			settings: this.settings,
-			quotes: userQuotes,
+			quotes: this.allQuotes, // Save all quotes
 		});
 	}
 
@@ -257,6 +257,24 @@ export default class Gemmy extends Plugin {
 		};
 		this.imageEl.onmousedown = dragMouseDown;
 	}
+
+	async importQuotes(newQuotes: string[]) {
+		const uniqueNewQuotes = newQuotes.filter(
+			(q) => q.trim() !== "" && !this.allQuotes.includes(q),
+		);
+
+		if (uniqueNewQuotes.length > 0) {
+			this.allQuotes.push(...uniqueNewQuotes);
+			await this.savePluginData();
+			new Notice(
+				`Successfully imported ${uniqueNewQuotes.length} new quote(s).`,
+			);
+		} else {
+			new Notice(
+				"No new quotes were imported. They might be duplicates or empty.",
+			);
+		}
+	}
 }
 
 // ĐÂY LÀ PHẦN MÀY COPY THIẾU, THẰNG NGU
@@ -280,22 +298,6 @@ class GemmySettingTab extends PluginSettingTab {
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.idleTalkFrequency = value;
-						await this.plugin.savePluginData();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Writing mode grace period")
-			.setDesc(
-				"How soon Gemmy starts to get disappointed after you stop tying in writing mode, in seconds.",
-			)
-			.addSlider((slider) =>
-				slider
-					.setLimits(5, 180, 5)
-					.setDynamicTooltip()
-					.setValue(this.plugin.settings.writingModeGracePeriod)
-					.onChange(async (value) => {
-						this.plugin.settings.writingModeGracePeriod = value;
 						await this.plugin.savePluginData();
 					}),
 			);
@@ -335,6 +337,40 @@ class HistoryModal extends Modal {
 	}
 }
 
+class AddUserQuoteModal extends Modal {
+	onSubmit: (quote: string) => void;
+	constructor(app: App, onSubmit: (quote: string) => void) {
+		super(app);
+		this.onSubmit = onSubmit;
+	}
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl("h2", { text: "Add Your Quote" });
+		const textarea = contentEl.createEl("textarea", {
+			cls: "gemmy-quote-textarea",
+			placeholder: "Enter your quote here. It can span multiple lines.",
+		});
+		textarea.rows = 10;
+		new Setting(contentEl).addButton((btn) =>
+			btn
+				.setButtonText("Save")
+				.setCta()
+				.onClick(() => {
+					const quote = textarea.value.trim();
+					if (quote) {
+						this.onSubmit(quote);
+						this.close();
+					} else {
+						new Notice("Quote cannot be empty.");
+					}
+				}),
+		);
+	}
+	onClose() {
+		this.contentEl.empty();
+	}
+}
+
 class AddQuoteModal extends Modal {
 	onSubmit: (quotes: string[]) => void;
 	constructor(app: App, onSubmit: (quotes: string[]) => void) {
@@ -368,23 +404,33 @@ class AddQuoteModal extends Modal {
 }
 
 class ViewAllQuotesModal extends Modal {
-	allQuotes: string[];
-	constructor(app: App, allQuotes: string[]) {
+	plugin: Gemmy;
+
+	constructor(app: App, plugin: Gemmy) {
 		super(app);
-		this.allQuotes = allQuotes;
+		this.plugin = plugin;
 	}
+
 	onOpen() {
 		const { contentEl } = this;
+		contentEl.empty(); // Clear previous content
 		contentEl.createEl("h2", { text: "All Available Quotes" });
-		if (this.allQuotes.length === 0) {
+
+		if (this.plugin.allQuotes.length === 0) {
 			contentEl.createEl("p", { text: "No quotes available." });
 			return;
 		}
+
 		const listEl = contentEl.createEl("ol");
-		for (const quote of this.allQuotes) {
+		for (const quote of this.plugin.allQuotes) {
 			const listItemEl = listEl.createEl("li");
 			listItemEl.createDiv({ text: quote, cls: "history-quote-text" });
-			const copyBtn = listItemEl.createEl("button", {
+
+			const buttonGroup = listItemEl.createDiv({
+				cls: "history-button-group",
+			});
+
+			const copyBtn = buttonGroup.createEl("button", {
 				text: "Copy",
 				cls: "history-copy-button",
 			});
@@ -393,8 +439,105 @@ class ViewAllQuotesModal extends Modal {
 					new Notice(`Copied: "${quote.slice(0, 20)}..."`);
 				});
 			};
+
+			const deleteBtn = buttonGroup.createEl("button", {
+				text: "Delete",
+				cls: "history-delete-button",
+			});
+			deleteBtn.onclick = async () => {
+				const index = this.plugin.allQuotes.indexOf(quote);
+				if (index > -1) {
+					this.plugin.allQuotes.splice(index, 1);
+					await this.plugin.savePluginData();
+					new Notice("Quote deleted.");
+					// Re-render the modal content to reflect the change
+					this.onOpen();
+				}
+			};
 		}
 	}
+
+	onClose() {
+		this.contentEl.empty();
+	}
+}
+
+class ImportModal extends Modal {
+	plugin: Gemmy;
+
+	constructor(app: App, plugin: Gemmy) {
+		super(app);
+		this.plugin = plugin;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.createEl("h2", { text: "Import Quotes" });
+		contentEl.createEl("p", {
+			text: "Select a JSON or CSV file to import.",
+		});
+
+		const fileInput = contentEl.createEl("input", {
+			type: "file",
+			attr: {
+				accept: ".json,.csv",
+			},
+		});
+
+		fileInput.onchange = async (e) => {
+			const file = (e.target as HTMLInputElement).files?.[0];
+			if (!file) return;
+
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const content = event.target?.result as string;
+				if (!content) {
+					new Notice("File is empty or could not be read.");
+					return;
+				}
+
+				let parsedQuotes: string[] = [];
+				try {
+					if (file.name.endsWith(".json")) {
+						const data = JSON.parse(content);
+						if (Array.isArray(data)) {
+							parsedQuotes = data.filter(
+								(item) => typeof item === "string",
+							);
+						} else if (data && Array.isArray(data.quotes)) {
+							parsedQuotes = data.quotes.filter(
+								(item) => typeof item === "string",
+							);
+						} else {
+							throw new Error(
+								"Invalid JSON format. Expected an array of strings or an object with a 'quotes' array.",
+							);
+						}
+					} else if (file.name.endsWith(".csv")) {
+						// Simple CSV parsing: one quote per line
+						parsedQuotes = content
+							.split("\n")
+							.map((line) => line.trim())
+							.filter((line) => line.length > 0);
+					}
+					this.plugin.importQuotes(parsedQuotes);
+				} catch (error) {
+					new Notice("Error parsing file: " + error.message);
+				} finally {
+					this.close();
+				}
+			};
+
+			reader.onerror = () => {
+				new Notice("Error reading file.");
+				this.close();
+			};
+
+			reader.readAsText(file);
+		};
+	}
+
 	onClose() {
 		this.contentEl.empty();
 	}
