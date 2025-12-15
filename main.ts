@@ -136,6 +136,40 @@ export default class Gemmy extends Plugin {
 					}),
 			);
 
+			menu.addItem((item) =>
+				item
+					.setTitle("Import Quotes")
+					.setIcon("upload")
+					.onClick(() => {
+						new ImportModal(this.app, this).open();
+					}),
+			);
+
+			menu.addItem((item) =>
+				item
+					.setTitle("Export Quotes")
+					.setIcon("download")
+					.onClick(() => {
+						const dataToExport = JSON.stringify(
+							{ quotes: this.allQuotes },
+							null,
+							2,
+						);
+						const blob = new Blob([dataToExport], {
+							type: "application/json",
+						});
+						const url = URL.createObjectURL(blob);
+						const a = document.createElement("a");
+						a.href = url;
+						a.download = "gemmy_all_quotes.json";
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+						new Notice("All quotes exported!");
+					}),
+			);
+
 			menu.addSeparator();
 
 			menu.addItem((item) =>
@@ -469,39 +503,6 @@ class GemmySettingTab extends PluginSettingTab {
 						this.plugin.resetIdleInterval();
 					}),
 			);
-	}
-}
-
-class HistoryModal extends Modal {
-	history: string[];
-	constructor(app: App, history: string[]) {
-		super(app);
-		this.history = history;
-	}
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.createEl("h2", { text: "Last 5 Quotes" });
-		if (this.history.length === 0) {
-			contentEl.createEl("p", { text: "No history yet." });
-			return;
-		}
-		const listEl = contentEl.createEl("ol");
-		for (const quote of this.history) {
-			const listItemEl = listEl.createEl("li");
-			listItemEl.createDiv({ text: quote, cls: "history-quote-text" });
-			const copyBtn = listItemEl.createEl("button", {
-				text: "Copy",
-				cls: "history-copy-button",
-			});
-			copyBtn.onclick = () => {
-				navigator.clipboard.writeText(quote).then(() => {
-					new Notice(`Copied: "${quote.slice(0, 20)}..."`);
-				});
-			};
-		}
-	}
-	onClose() {
-		this.contentEl.empty();
 	}
 }
 

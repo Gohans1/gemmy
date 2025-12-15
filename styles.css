@@ -99,23 +99,10 @@ If your plugin does not need CSS, delete this file.
 /* === BỎ MẸ CÁI ĐỐNG ARIA-LABEL CŨ ĐI, ĐÉO CẦN NỮA === */
 /* .gemmy-container[aria-label]::before { ... } */
 
-/* === PHẦN THÊM VÀO CHO CÁI HISTORY MODAL NGU HỌC === */
+/* Styling for Modals (View All, Favorites) */
 
 .modal-container ol {
-	padding-inline-start: 20px; /* Thụt đầu dòng cho cái danh sách số */
-}
-
-.modal-container .gemmy-history-list li {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 10px 0;
-	border-bottom: 1px solid var(--background-modifier-border);
-	gap: 16px;
-}
-
-.modal-container .gemmy-history-list li:last-child {
-	border-bottom: none;
+	padding-inline-start: 20px;
 }
 .gemmy-quote-textarea {
 	width: 100%;
