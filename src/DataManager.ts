@@ -97,4 +97,20 @@ export class DataManager {
 		Object.assign(this.settings, newSettings);
 		await this.save();
 	}
+
+	async saveAvatar(file: File): Promise<string> {
+		const arrayBuffer = await file.arrayBuffer();
+		// @ts-ignore
+		const pluginDir = this.plugin.manifest.dir;
+		const fileName = "custom_avatar.png"; // Fixed name to overwrite previous
+		const filePath = `${pluginDir}/${fileName}`;
+
+		await this.plugin.app.vault.adapter.writeBinary(filePath, arrayBuffer);
+
+		// Get resource path for display
+		// @ts-ignore
+		const resourcePath =
+			this.plugin.app.vault.adapter.getResourcePath(filePath);
+		return resourcePath;
+	}
 }

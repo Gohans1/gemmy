@@ -363,29 +363,23 @@ export class ChangeAvatarModal extends BaseGemmyModal {
 			},
 		});
 
-		fileInput.onchange = (e) => {
+		fileInput.onchange = async (e) => {
 			const file = (e.target as HTMLInputElement).files?.[0];
 			if (file) {
-				// @ts-ignore
-				let path = file.path;
+				try {
+					new Notice("Processing image...");
+					// Save the file to plugin directory and get the resource path
+					const resourcePath =
+						await this.dataManager.saveAvatar(file);
 
-				if (!path) {
-					new Notice(
-						"Error: Cannot retrieve file path. Are you in a restricted environment?",
-					);
-					return;
-				}
-
-				// Normalize path (backslashes to forward slashes if needed, though Windows handles both in many contexts)
-				// For display in text field, keep it as is or normalize?
-				// Let's just use it.
-
-				currentPath = path;
-				if (textComponent) {
-					textComponent.setValue(path);
-					new Notice("File selected: " + file.name); // Feedback to user
-				} else {
-					new Notice("Error: Text component not initialized.");
+					currentPath = resourcePath;
+					if (textComponent) {
+						textComponent.setValue(resourcePath);
+						new Notice("Image saved successfully!");
+					}
+				} catch (error) {
+					console.error(error);
+					new Notice("Error saving image: " + error.message);
 				}
 			}
 		};
