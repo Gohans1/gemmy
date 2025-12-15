@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Plugin, debounce } from "obsidian";
 import { GemmyData, GemmySettings } from "./types";
 import { DEFAULT_SETTINGS } from "./constants";
 
@@ -7,9 +7,12 @@ export class DataManager {
 	settings: GemmySettings;
 	allQuotes: string[] = [];
 	favoriteQuotes: string[] = [];
+	private requestSave: () => void;
 
 	constructor(plugin: Plugin) {
 		this.plugin = plugin;
+		// Debounce save to prevent excessive writes during rapid updates
+		this.requestSave = debounce(this.saveInternal.bind(this), 1000);
 	}
 
 	async load() {
@@ -20,6 +23,10 @@ export class DataManager {
 	}
 
 	async save() {
+		this.requestSave();
+	}
+
+	private async saveInternal() {
 		await this.plugin.saveData({
 			settings: this.settings,
 			quotes: this.allQuotes,
@@ -60,7 +67,9 @@ export class DataManager {
 	async toggleFavorite(quote: string): Promise<boolean> {
 		// returns true if added, false if removed
 		if (this.favoriteQuotes.includes(quote)) {
-			this.favoriteQuotes = this.favoriteQuotes.filter((q) => q !== quote);
+			this.favoriteQuotes = this.favoriteQuotes.filter(
+				(q) => q !== quote,
+			);
 			await this.save();
 			return false;
 		} else {
