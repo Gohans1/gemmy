@@ -6,6 +6,8 @@ import {
 	Setting,
 	Notice,
 	Modal,
+	Menu,
+	setIcon,
 } from "obsidian";
 import KAPILGUPTA_STATIC from "./kapilgupta.png";
 
@@ -24,6 +26,7 @@ const DEFAULT_SETTINGS: GemmySettings = {
 interface GemmyData {
 	settings: GemmySettings;
 	quotes: string[];
+	favoriteQuotes: string[];
 }
 
 const BUBBLE_DURATION = 5000;
@@ -31,20 +34,22 @@ const BUBBLE_DURATION = 5000;
 export default class Gemmy extends Plugin {
 	settings: GemmySettings;
 	allQuotes: string[] = []; // Biến chứa tất cả quotes, bao gồm cả quote mới
+	favoriteQuotes: string[] = [];
 	gemmyEl: HTMLElement;
 	imageEl: HTMLElement;
 	chatBubbleEl: HTMLElement;
 	bubbleContentEl: HTMLElement;
-	copyButtonEl: HTMLElement;
 	nextButtonEl: HTMLElement;
-	historyButtonEl: HTMLElement;
-	addQuoteButtonEl: HTMLElement;
-	viewAllButtonEl: HTMLElement;
+	previousButtonEl: HTMLElement;
+	menuButtonEl: HTMLElement;
 	exportButtonEl: HTMLElement;
+	favoriteButtonEl: HTMLElement;
+	viewAllButtonEl: HTMLElement;
 	bubbleTimeout: number;
 	idleIntervalId: number;
 	appeared: boolean = false;
 	quoteHistory: string[] = [];
+	historyIndex: number = 0;
 
 	async onload() {
 		await this.loadPluginData();
@@ -61,61 +66,146 @@ export default class Gemmy extends Plugin {
 			cls: "gemmy-button-container",
 		});
 
-		this.viewAllButtonEl = buttonContainer.createEl("button", {
-			cls: "gemmy-view-all-button",
-			text: "View All",
+		this.favoriteButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-favorite-button",
+			text: "🤍", // Default state
 		});
-		this.historyButtonEl = buttonContainer.createEl("button", {
-			cls: "gemmy-history-button",
-			text: "History",
+
+		this.menuButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-menu-button",
 		});
-		this.addQuoteButtonEl = buttonContainer.createEl("button", {
-			cls: "gemmy-add-button",
-			text: "Add",
+		setIcon(this.menuButtonEl, "more-vertical");
+		this.menuButtonEl.setAttribute("aria-label", "Menu");
+
+		this.previousButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-next-button", // Reuse next button style
+			text: "Prev",
 		});
-		this.copyButtonEl = buttonContainer.createEl("button", {
-			cls: "gemmy-copy-button",
-			text: "Copy",
-		});
+
 		this.nextButtonEl = buttonContainer.createEl("button", {
 			cls: "gemmy-next-button",
 			text: "Next",
 		});
 
-		this.viewAllButtonEl.onclick = () =>
-			new ViewAllQuotesModal(this.app, this).open();
-		this.historyButtonEl.onclick = () =>
-			new HistoryModal(this.app, this.quoteHistory).open();
-		this.addQuoteButtonEl.onclick = () => {
-			new AddUserQuoteModal(this.app, async (newQuote) => {
-				if (!this.allQuotes.includes(newQuote)) {
-					this.allQuotes.push(newQuote);
-					await this.savePluginData();
-					new Notice("New quote saved!");
+		this.favoriteButtonEl.onclick = async () => {
+			const currentQuote = this.bubbleContentEl.innerText;
+			if (this.favoriteQuotes.includes(currentQuote)) {
+				// Remove from favorites
+				this.favoriteQuotes = this.favoriteQuotes.filter(
+					(q) => q !== currentQuote,
+				);
+				this.favoriteButtonEl.innerText = "🤍";
+				new Notice("Removed from favorites.");
+			} else {
+				// Add to favorites
+				this.favoriteQuotes.push(currentQuote);
+				this.favoriteButtonEl.innerText = "❤️";
+				new Notice("Added to favorites!");
+			}
+			await this.savePluginData();
+		};
+
+		this.menuButtonEl.onclick = (event: MouseEvent) => {
+			const menu = new Menu();
+
+			menu.addItem((item) =>
+				item
+					.setTitle("Copy Quote")
+					.setIcon("copy")
+					.onClick(() => {
+						navigator.clipboard
+							.writeText(this.bubbleContentEl.innerText)
+							.then(() => new Notice("Copied!"));
+					}),
+			);
+
+			menu.addItem((item) =>
+				item
+					.setTitle("Add New Quote")
+					.setIcon("plus-circle")
+					.onClick(() => {
+						new AddUserQuoteModal(this.app, async (newQuote) => {
+							if (!this.allQuotes.includes(newQuote)) {
+								this.allQuotes.push(newQuote);
+								await this.savePluginData();
+								new Notice("New quote saved!");
+							} else {
+								new Notice("This quote already exists.");
+							}
+						}).open();
+					}),
+			);
+
+			menu.addSeparator();
+
+			menu.addItem((item) =>
+				item
+					.setTitle("Change Idle Frequency")
+					.setIcon("clock")
+					.onClick(() => {
+						new ChangeFrequencyModal(this.app, this).open();
+					}),
+			);
+
+			menu.addItem((item) =>
+				item
+					.setTitle("Hide")
+					.setIcon("eye-off")
+					.onClick(() => {
+						this.disappear();
+					}),
+			);
+
+			menu.showAtMouseEvent(event);
+		};
+
+		this.previousButtonEl.onclick = () => {
+			if (this.historyIndex < this.quoteHistory.length - 1) {
+				this.historyIndex++;
+				const prevQuote = this.quoteHistory[this.historyIndex];
+				this.bubbleContentEl.innerText = prevQuote;
+
+				// Update Favorite Button State for previous quote
+				if (this.favoriteQuotes.includes(prevQuote)) {
+					this.favoriteButtonEl.innerText = "❤️";
 				} else {
-					new Notice("This quote already exists.");
+					this.favoriteButtonEl.innerText = "🤍";
 				}
-			}).open();
+			} else {
+				new Notice("No more history.");
+			}
 		};
-		this.copyButtonEl.onclick = () => {
-			navigator.clipboard
-				.writeText(this.bubbleContentEl.innerText)
-				.then(() => new Notice("Copied!"));
-		};
+
 		this.nextButtonEl.onclick = () => {
-			this.saySomething();
+			if (this.historyIndex > 0) {
+				this.historyIndex--;
+				const nextQuote = this.quoteHistory[this.historyIndex];
+				this.bubbleContentEl.innerText = nextQuote;
+
+				// Update Favorite Button State
+				if (this.favoriteQuotes.includes(nextQuote)) {
+					this.favoriteButtonEl.innerText = "❤️";
+				} else {
+					this.favoriteButtonEl.innerText = "🤍";
+				}
+			} else {
+				this.saySomething();
+			}
 			this.resetIdleInterval();
 		};
+
+		this.addCommand({
+			id: "view-all-quotes",
+			name: "View all quotes",
+			callback: () => {
+				new ViewAllQuotesModal(this.app, this).open();
+			},
+		});
 
 		this.addCommand({
 			id: "show",
 			name: "Show Gemmy",
 			callback: () => this.appear(),
-		});
-		this.addCommand({
-			id: "hide",
-			name: "Hide Gemmy",
-			callback: () => this.disappear(),
 		});
 
 		this.addCommand({
@@ -158,6 +248,14 @@ export default class Gemmy extends Plugin {
 		});
 
 		this.addCommand({
+			id: "view-favorite-quotes",
+			name: "View favorite quotes",
+			callback: () => {
+				new ViewFavoritesModal(this.app, this).open();
+			},
+		});
+
+		this.addCommand({
 			id: "import-quotes",
 			name: "Import quotes from file",
 			callback: () => {
@@ -175,7 +273,7 @@ export default class Gemmy extends Plugin {
 		if (this.idleIntervalId) window.clearInterval(this.idleIntervalId);
 		this.idleIntervalId = window.setInterval(() => {
 			if (this.appeared) this.saySomething();
-		}, 15000);
+		}, this.settings.idleTalkFrequency * 1000);
 		this.registerInterval(this.idleIntervalId);
 	}
 
@@ -199,12 +297,21 @@ export default class Gemmy extends Plugin {
 		if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
 		if (this.allQuotes.length === 0) return;
 
+		this.historyIndex = 0; // Reset history index when generating new quote
 		let randomThing =
 			this.allQuotes[Math.floor(Math.random() * this.allQuotes.length)];
 		this.quoteHistory.unshift(randomThing);
 		if (this.quoteHistory.length > 5) this.quoteHistory.pop();
 
 		this.bubbleContentEl.innerText = randomThing;
+
+		// Update Favorite Button State
+		if (this.favoriteQuotes.includes(randomThing)) {
+			this.favoriteButtonEl.innerText = "❤️";
+		} else {
+			this.favoriteButtonEl.innerText = "🤍";
+		}
+
 		this.chatBubbleEl.removeClass("hidden");
 		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
 
@@ -221,12 +328,14 @@ export default class Gemmy extends Plugin {
 		const data: GemmyData = await this.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings);
 		this.allQuotes = data?.quotes || []; // Just load what's saved, or start fresh
+		this.favoriteQuotes = data?.favoriteQuotes || [];
 	}
 
 	async savePluginData() {
 		await this.saveData({
 			settings: this.settings,
 			quotes: this.allQuotes, // Save all quotes
+			favoriteQuotes: this.favoriteQuotes,
 		});
 	}
 
@@ -277,6 +386,64 @@ export default class Gemmy extends Plugin {
 	}
 }
 
+class ViewFavoritesModal extends Modal {
+	plugin: Gemmy;
+
+	constructor(app: App, plugin: Gemmy) {
+		super(app);
+		this.plugin = plugin;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.createEl("h2", { text: "Favorite Quotes" });
+
+		if (this.plugin.favoriteQuotes.length === 0) {
+			contentEl.createEl("p", { text: "No favorite quotes yet." });
+			return;
+		}
+
+		const listEl = contentEl.createEl("ol");
+		for (const quote of this.plugin.favoriteQuotes) {
+			const listItemEl = listEl.createEl("li");
+			listItemEl.createDiv({ text: quote, cls: "history-quote-text" });
+
+			const buttonGroup = listItemEl.createDiv({
+				cls: "history-button-group",
+			});
+
+			const copyBtn = buttonGroup.createEl("button", {
+				text: "Copy",
+				cls: "history-copy-button",
+			});
+			copyBtn.onclick = () => {
+				navigator.clipboard.writeText(quote).then(() => {
+					new Notice(`Copied: "${quote.slice(0, 20)}..."`);
+				});
+			};
+
+			const removeBtn = buttonGroup.createEl("button", {
+				text: "Remove",
+				cls: "history-delete-button",
+			});
+			removeBtn.onclick = async () => {
+				const index = this.plugin.favoriteQuotes.indexOf(quote);
+				if (index > -1) {
+					this.plugin.favoriteQuotes.splice(index, 1);
+					await this.plugin.savePluginData();
+					new Notice("Removed from favorites.");
+					this.onOpen(); // Refresh list
+				}
+			};
+		}
+	}
+
+	onClose() {
+		this.contentEl.empty();
+	}
+}
+
 // ĐÂY LÀ PHẦN MÀY COPY THIẾU, THẰNG NGU
 class GemmySettingTab extends PluginSettingTab {
 	plugin: Gemmy;
@@ -289,16 +456,17 @@ class GemmySettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Idle talk frequency")
-			.setDesc("How often does Gemmy speak when idle, in minutes.")
+			.setName("Idle talk frequency (seconds)")
+			.setDesc("How often does Gemmy speak when idle, in seconds.")
 			.addSlider((slider) =>
 				slider
-					.setLimits(5, 60, 5)
+					.setLimits(5, 300, 5)
 					.setValue(this.plugin.settings.idleTalkFrequency)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.idleTalkFrequency = value;
 						await this.plugin.savePluginData();
+						this.plugin.resetIdleInterval();
 					}),
 			);
 	}
@@ -536,6 +704,41 @@ class ImportModal extends Modal {
 
 			reader.readAsText(file);
 		};
+	}
+
+	onClose() {
+		this.contentEl.empty();
+	}
+}
+
+class ChangeFrequencyModal extends Modal {
+	plugin: Gemmy;
+
+	constructor(app: App, plugin: Gemmy) {
+		super(app);
+		this.plugin = plugin;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.createEl("h2", { text: "Change Idle Frequency" });
+
+		new Setting(contentEl)
+			.setName("Idle Frequency (seconds)")
+			.setDesc("How often Gemmy speaks when idle (in seconds).")
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.idleTalkFrequency.toString())
+					.onChange(async (value) => {
+						const numValue = parseInt(value);
+						if (!isNaN(numValue) && numValue > 0) {
+							this.plugin.settings.idleTalkFrequency = numValue;
+							await this.plugin.savePluginData();
+							this.plugin.resetIdleInterval();
+						}
+					}),
+			);
 	}
 
 	onClose() {
