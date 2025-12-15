@@ -1,8 +1,26 @@
 import { App, Modal, Notice, Setting } from "obsidian";
 import { DataManager } from "./DataManager";
-import { UI_TEXT, NOTICES, CSS_CLASSES, CONSTANTS } from "./constants";
+import { UI_TEXT, NOTICES, CSS_CLASSES } from "./constants";
 
-export class ViewFavoritesModal extends Modal {
+abstract class BaseGemmyModal extends Modal {
+	constructor(app: App) {
+		super(app);
+	}
+
+	onOpen() {
+		this.contentEl.empty();
+	}
+
+	onClose() {
+		this.contentEl.empty();
+	}
+
+	protected setTitle(title: string) {
+		this.contentEl.createEl("h2", { text: title });
+	}
+}
+
+export class ViewFavoritesModal extends BaseGemmyModal {
 	dataManager: DataManager;
 
 	constructor(app: App, dataManager: DataManager) {
@@ -11,9 +29,9 @@ export class ViewFavoritesModal extends Modal {
 	}
 
 	onOpen() {
+		super.onOpen();
+		this.setTitle(UI_TEXT.TITLES.FAVORITE_QUOTES);
 		const { contentEl } = this;
-		contentEl.empty();
-		contentEl.createEl("h2", { text: UI_TEXT.TITLES.FAVORITE_QUOTES });
 
 		if (this.dataManager.favoriteQuotes.length === 0) {
 			contentEl.createEl("p", { text: "No favorite quotes yet." });
@@ -56,21 +74,19 @@ export class ViewFavoritesModal extends Modal {
 			};
 		}
 	}
-
-	onClose() {
-		this.contentEl.empty();
-	}
 }
 
-export class AddUserQuoteModal extends Modal {
+export class AddUserQuoteModal extends BaseGemmyModal {
 	onSubmit: (quote: string) => void;
 	constructor(app: App, onSubmit: (quote: string) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
 	}
 	onOpen() {
+		super.onOpen();
+		this.setTitle(UI_TEXT.TITLES.ADD_YOUR_QUOTE);
 		const { contentEl } = this;
-		contentEl.createEl("h2", { text: UI_TEXT.TITLES.ADD_YOUR_QUOTE });
+
 		const textarea = contentEl.createEl("textarea", {
 			cls: CSS_CLASSES.QUOTE_TEXTAREA,
 			placeholder: UI_TEXT.LABELS.ENTER_QUOTE_PLACEHOLDER,
@@ -91,20 +107,19 @@ export class AddUserQuoteModal extends Modal {
 				}),
 		);
 	}
-	onClose() {
-		this.contentEl.empty();
-	}
 }
 
-export class AddQuoteModal extends Modal {
+export class AddQuoteModal extends BaseGemmyModal {
 	onSubmit: (quotes: string[]) => void;
 	constructor(app: App, onSubmit: (quotes: string[]) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
 	}
 	onOpen() {
+		super.onOpen();
+		this.setTitle(UI_TEXT.TITLES.ADD_YOUR_QUOTES);
 		const { contentEl } = this;
-		contentEl.createEl("h2", { text: UI_TEXT.TITLES.ADD_YOUR_QUOTES });
+
 		contentEl.createEl("p", { text: UI_TEXT.LABELS.ENTER_QUOTES_NEW_LINE });
 		const textarea = contentEl.createEl("textarea", {
 			cls: CSS_CLASSES.QUOTE_TEXTAREA,
@@ -123,12 +138,9 @@ export class AddQuoteModal extends Modal {
 				}),
 		);
 	}
-	onClose() {
-		this.contentEl.empty();
-	}
 }
 
-export class ViewAllQuotesModal extends Modal {
+export class ViewAllQuotesModal extends BaseGemmyModal {
 	dataManager: DataManager;
 
 	constructor(app: App, dataManager: DataManager) {
@@ -137,9 +149,9 @@ export class ViewAllQuotesModal extends Modal {
 	}
 
 	onOpen() {
+		super.onOpen();
+		this.setTitle(UI_TEXT.TITLES.ALL_AVAILABLE_QUOTES);
 		const { contentEl } = this;
-		contentEl.empty(); // Clear previous content
-		contentEl.createEl("h2", { text: UI_TEXT.TITLES.ALL_AVAILABLE_QUOTES });
 
 		if (this.dataManager.allQuotes.length === 0) {
 			contentEl.createEl("p", { text: "No quotes available." });
@@ -182,13 +194,9 @@ export class ViewAllQuotesModal extends Modal {
 			};
 		}
 	}
-
-	onClose() {
-		this.contentEl.empty();
-	}
 }
 
-export class ImportModal extends Modal {
+export class ImportModal extends BaseGemmyModal {
 	dataManager: DataManager;
 
 	constructor(app: App, dataManager: DataManager) {
@@ -197,9 +205,10 @@ export class ImportModal extends Modal {
 	}
 
 	onOpen() {
+		super.onOpen();
+		this.setTitle(UI_TEXT.TITLES.IMPORT_QUOTES);
 		const { contentEl } = this;
-		contentEl.empty();
-		contentEl.createEl("h2", { text: UI_TEXT.TITLES.IMPORT_QUOTES });
+
 		contentEl.createEl("p", {
 			text: UI_TEXT.LABELS.SELECT_FILE,
 		});
@@ -270,13 +279,9 @@ export class ImportModal extends Modal {
 			reader.readAsText(file);
 		};
 	}
-
-	onClose() {
-		this.contentEl.empty();
-	}
 }
 
-export class ChangeFrequencyModal extends Modal {
+export class ChangeFrequencyModal extends BaseGemmyModal {
 	dataManager: DataManager;
 	onSave: () => void;
 
@@ -287,11 +292,9 @@ export class ChangeFrequencyModal extends Modal {
 	}
 
 	onOpen() {
+		super.onOpen();
+		this.setTitle(UI_TEXT.TITLES.CHANGE_IDLE_FREQUENCY);
 		const { contentEl } = this;
-		contentEl.empty();
-		contentEl.createEl("h2", {
-			text: UI_TEXT.TITLES.CHANGE_IDLE_FREQUENCY,
-		});
 
 		new Setting(contentEl)
 			.setName(UI_TEXT.LABELS.IDLE_FREQUENCY_NAME)
@@ -311,9 +314,5 @@ export class ChangeFrequencyModal extends Modal {
 						}
 					}),
 			);
-	}
-
-	onClose() {
-		this.contentEl.empty();
 	}
 }
