@@ -52,6 +52,7 @@ export const UI_TEXT = {
 		DELETE: "Delete",
 		SAVE: "Save",
 		RESET: "Reset Default",
+		BROWSE_IMAGE: "Browse Image...",
 	},
 	TITLES: {
 		FAVORITE_QUOTES: "Favorite Quotes",
