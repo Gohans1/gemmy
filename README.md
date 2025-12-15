@@ -1,55 +1,60 @@
-# Gemmy - Obsidian Unhelper
+# Gemmy - The Truth Speaker 💎
 
-<img src="https://user-images.githubusercontent.com/1171143/229297707-5efa8761-ef55-4d01-a105-88a347bc6cf0.png" width="300">
-
-Not sure if an AI assistant is going to be helpful in your workflow?
-
-Don't worry, we've eliminated the guesswork for you because Gemmy is 100% going to be unhelpful.
-
-Introducing Obsidian's first assistant — Gemmy, the Obsidian Unhelper. It has two major features:
-
-## Randomly saying things
-
-Gemmy seeks validation by randomly saying things every now and then.
-
-You can customize how often this happens. Or just don't summon Gemmy.
-
-## Writing mode
-
-Gemmy pops out to [motivate you](https://user-images.githubusercontent.com/1171143/229297494-8a0cae3f-4c8e-47a9-801b-dd1c52dfc917.png) when you have stopped typing for long enough. Again, you can customize how long that should be.
-
-Risk: Gemmy might actually be helpful with writing if you use this mode. We're not responsible for any extra productivity Gemmy might bring.
-
-## "Accidental" Features
-
-We failed at being completely useless and accidentally added some functional features. We apologize for the convenience.
-
-- **Favorites**: Click the heart icon to save a quote. You can view your "Favorite Quotes" from the menu.
-- **Favorite Mode**: Toggle the mode to only hear quotes you've liked. This effectively makes Gemmy... consistent? Disgusting.
-- **Import/Export**: You can now import your own quotes (JSON/CSV) or export the current list.
-- **History**: Use "Prev" and "Next" buttons to revisit the nonsense Gemmy just spouted.
-- **Menu**: There's a 3-dots menu button now. It holds all the clutter we didn't want on the main bubble.
-
-## How to use
-
-Install Gemmy. There are commands in the command palette when you type "Gemmy". You can figure out the rest on your own.
+<!-- CHÈN ẢNH: Một banner đẹp hoặc logo của Gemmy nằm giữa. -->
+<div align="center">
+  <img src="https://user-images.githubusercontent.com/1171143/229297707-5efa8761-ef55-4d01-a105-88a347bc6cf0.png" width="150" alt="Gemmy Logo">
+  <br/>
+  <em>"Direct Truths for your Obsidian Workflow"</em>
+</div>
 
 ---
 
-Special thanks: [Rigmarole](https://rigmarolestudio.com/) for creating and animating Gemmy
+## Overview
 
-Credit: the talented Obsidian mods team, including argentum, CawlinTeffid, cotmax, Eleanor Konik, koala, Leah, rigmarole, ryanjamurphy & WhiteNoise
+**Gemmy** is not just a companion; it is a mirror. Built for those who seek clarity, this plugin delivers the piercing insights of **Kapil Gupta** directly into your Obsidian workspace.
 
-The code is under MIT license, whereas the Gemmy character is under CC BY 3.0 license.
+When you pause, reflect, or lose focus, Gemmy appears to deliver a Truth—uncompromising, direct, and devoid of prescriptions.
 
-Obsidian logo is adapted from:
+<!-- CHÈN ẢNH: Ảnh GIF hoặc Screenshot cảnh Gemmy hiện bong bóng chat chứa một câu quote của Kapil Gupta bên cạnh văn bản đang viết -->
+> ![Gemmy in Action](PLACEHOLDER_LINK_TO_GIF_OR_IMAGE_HERE)
 
-[Crystal shard icon](https://icon-icons.com/icon/Crystal-Shard/88819)  
-By [Chanut is Industries](https://icon-icons.com/users/W52nHhY3W1VlvwyJTwS4d/icon-sets/)  
-License: Attribution 3.0 Unported (CC BY 3.0)
+## ✨ Key Features
+
+### 🧘‍♂️ Passive Wisdom (Idle Mode)
+Gemmy respects your flow. It only speaks when you stop writing, filling your moments of silence with profound insights rather than distractions.
+- **Customizable Frequency:** You decide how often the Truth is spoken.
+
+### ❤️ Curated & Personal
+- **Kapil Gupta Collection:** Pre-loaded with a curated database of Direct Truths.
+- **Favorites System:** Click the `Heart` icon to save quotes that resonate with you.
+- **Favorite Mode:** Toggle to filter out the noise and only cycle through your saved truths.
+
+### 🛠️ Power User Tools
+- **Import/Export:** Your wisdom is yours. Import your own JSON/CSV datasets or export your collection to share.
+- **History Navigation:** Missed a quote? Use the `Prev` / `Next` buttons to navigate the session's history.
+- **Minimalist Menu:** Access all settings and management tools via a clean, unobtrusive menu.
+
+<!-- CHÈN ẢNH: Ảnh chụp Menu của Gemmy và giao diện Settings -->
+> ![Gemmy Menu and Settings](PLACEHOLDER_LINK_TO_SETTINGS_IMAGE)
+
+## 📦 How to Use
+
+1. **Install** the plugin via Obsidian Community Plugins (search for "Gemmy").
+2. **Enable** the plugin.
+3. Gemmy will appear in your workspace. Drag him to your preferred corner.
+4. **Stop typing** and wait for the Truth.
+
+### Commands
+You can control Gemmy via the Command Palette (`Ctrl/Cmd + P`):
+- `Gemmy: Show Gemmy` - Summon the companion.
+- `Gemmy: Add a new quote` - Quickly add a thought to your database.
+- `Gemmy: View favorite quotes` - Review your saved insights.
+
+## Credits
+
+- **Content:** Inspired by the works of **Kapil Gupta** (Siddha Performance).
+- **Original Concept & Mascot:** [Rigmarole](https://rigmarolestudio.com/) & The Obsidian Mods Team.
+- **License:** The code is under MIT license. The Gemmy character is under CC BY 3.0 license.
 
 ---
-
-## Happy April Fools'
-
-Gemmy was proudly released on April 1, 2023.
+*Created for the Seekers.*
