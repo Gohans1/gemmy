@@ -20,9 +20,19 @@ Gemmy pops out to [motivate you](https://user-images.githubusercontent.com/11711
 
 Risk: Gemmy might actually be helpful with writing if you use this mode. We're not responsible for any extra productivity Gemmy might bring.
 
+## "Accidental" Features
+
+We failed at being completely useless and accidentally added some functional features. We apologize for the convenience.
+
+- **Favorites**: Click the heart icon to save a quote. You can view your "Favorite Quotes" from the menu.
+- **Favorite Mode**: Toggle the mode to only hear quotes you've liked. This effectively makes Gemmy... consistent? Disgusting.
+- **Import/Export**: You can now import your own quotes (JSON/CSV) or export the current list.
+- **History**: Use "Prev" and "Next" buttons to revisit the nonsense Gemmy just spouted.
+- **Menu**: There's a 3-dots menu button now. It holds all the clutter we didn't want on the main bubble.
+
 ## How to use
 
-Install Gemmy. There are four commands in the command palette when you type "Gemmy". You can figure out the rest on your own.
+Install Gemmy. There are commands in the command palette when you type "Gemmy". You can figure out the rest on your own.
 
 ---
 

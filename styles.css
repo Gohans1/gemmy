@@ -58,7 +58,8 @@ If your plugin does not need CSS, delete this file.
 .gemmy-copy-button,
 .gemmy-next-button,
 .gemmy-menu-button,
-.gemmy-favorite-button {
+.gemmy-favorite-button,
+.gemmy-toggle-mode-button {
 	padding: 1px 6px; /* ĐÃ LÀM CHO NÓ "BẸP" ĐI RỒI ĐẤY THẰNG LỒN */
 	font-size: 16px; /* Cho chữ nhỏ lại tí cho nó cân đối */
 	background-color: var(--background-modifier-hover);
@@ -75,7 +76,8 @@ If your plugin does not need CSS, delete this file.
 .gemmy-copy-button:hover,
 .gemmy-next-button:hover,
 .gemmy-menu-button:hover,
-.gemmy-favorite-button:hover {
+.gemmy-favorite-button:hover,
+.gemmy-toggle-mode-button:hover {
 	opacity: 1;
 }
 
