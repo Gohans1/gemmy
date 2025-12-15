@@ -316,3 +316,65 @@ export class ChangeFrequencyModal extends BaseGemmyModal {
 			);
 	}
 }
+
+export class ChangeAvatarModal extends BaseGemmyModal {
+	dataManager: DataManager;
+	onSave: () => void;
+
+	constructor(app: App, dataManager: DataManager, onSave: () => void) {
+		super(app);
+		this.dataManager = dataManager;
+		this.onSave = onSave;
+	}
+
+	onOpen() {
+		super.onOpen();
+		this.setTitle(UI_TEXT.TITLES.CHANGE_AVATAR);
+		const { contentEl } = this;
+
+		let currentPath = this.dataManager.settings.customAvatarPath || "";
+
+		const setting = new Setting(contentEl)
+			.setName(UI_TEXT.LABELS.AVATAR_URL_NAME)
+			.setDesc(UI_TEXT.LABELS.AVATAR_URL_DESC)
+			.addText((text) =>
+				text
+					.setValue(currentPath)
+					.setPlaceholder("https://example.com/image.png")
+					.onChange((value) => {
+						currentPath = value.trim();
+					}),
+			);
+
+		const btnDiv = contentEl.createDiv({
+			cls: "gemmy-modal-button-container",
+		});
+		btnDiv.style.marginTop = "20px";
+		btnDiv.style.display = "flex";
+		btnDiv.style.gap = "10px";
+		btnDiv.style.justifyContent = "flex-end";
+
+		const saveBtn = btnDiv.createEl("button", {
+			text: UI_TEXT.BUTTONS.SAVE,
+		});
+		saveBtn.addClass("mod-cta");
+		saveBtn.onclick = async () => {
+			await this.dataManager.updateSettings({
+				customAvatarPath: currentPath,
+			});
+			this.onSave();
+			this.close();
+		};
+
+		const resetBtn = btnDiv.createEl("button", {
+			text: UI_TEXT.BUTTONS.RESET,
+		});
+		resetBtn.onclick = async () => {
+			await this.dataManager.updateSettings({
+				customAvatarPath: "",
+			});
+			this.onSave();
+			this.close();
+		};
+	}
+}

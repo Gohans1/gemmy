@@ -1,5 +1,6 @@
 export interface GemmySettings {
 	idleTalkFrequency: number;
+	customAvatarPath?: string;
 }
 
 export interface GemmyData {

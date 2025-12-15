@@ -16,6 +16,7 @@ import {
 	AddQuoteModal,
 	ImportModal,
 	ChangeFrequencyModal,
+	ChangeAvatarModal,
 } from "./modals";
 
 export default class Gemmy extends Plugin {
@@ -204,6 +205,27 @@ export default class Gemmy extends Plugin {
 			// --- GROUP 3: SYSTEM ---
 			menu.addItem((item) =>
 				item
+					.setTitle(UI_TEXT.MENU_ITEMS.CHANGE_AVATAR)
+					.setIcon(UI_TEXT.ICONS.IMAGE)
+					.onClick(() => {
+						new ChangeAvatarModal(
+							this.app,
+							this.dataManager,
+							() => {
+								// Refresh the image immediately if gemmy is visible
+								if (this.appeared) {
+									this.imageEl.setAttribute(
+										"src",
+										this.getAvatarSource(),
+									);
+								}
+							},
+						).open();
+					}),
+			);
+
+			menu.addItem((item) =>
+				item
 					.setTitle(UI_TEXT.MENU_ITEMS.CHANGE_FREQUENCY)
 					.setIcon(UI_TEXT.ICONS.CLOCK)
 					.onClick(() => {
@@ -335,8 +357,16 @@ export default class Gemmy extends Plugin {
 		this.registerInterval(this.idleIntervalId);
 	}
 
+	getAvatarSource(): string {
+		const customPath = this.dataManager.settings.customAvatarPath;
+		if (customPath && customPath.trim() !== "") {
+			return customPath.trim();
+		}
+		return KAPILGUPTA_STATIC;
+	}
+
 	appear() {
-		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
+		this.imageEl.setAttribute("src", this.getAvatarSource());
 		this.appeared = true;
 		document.body.appendChild(this.gemmyEl);
 		this.gemmyEl.show();
@@ -387,7 +417,7 @@ export default class Gemmy extends Plugin {
 		this.updateFavoriteButtonState(randomThing);
 
 		this.chatBubbleEl.removeClass(CSS_CLASSES.HIDDEN);
-		this.imageEl.setAttribute("src", KAPILGUPTA_STATIC);
+		this.imageEl.setAttribute("src", this.getAvatarSource());
 
 		this.bubbleTimeout = window.setTimeout(() => {
 			this.chatBubbleEl.addClass(CSS_CLASSES.HIDDEN);

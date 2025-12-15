@@ -7,6 +7,7 @@ export const CONSTANTS = {
 
 export const DEFAULT_SETTINGS: GemmySettings = {
 	idleTalkFrequency: 5,
+	customAvatarPath: "",
 };
 
 export const CSS_CLASSES = {
@@ -41,6 +42,7 @@ export const UI_TEXT = {
 		DOWNLOAD: "download",
 		CLOCK: "clock",
 		EYE_OFF: "eye-off",
+		IMAGE: "image",
 	},
 	BUTTONS: {
 		PREV: "Prev",
@@ -49,6 +51,7 @@ export const UI_TEXT = {
 		REMOVE: "Remove",
 		DELETE: "Delete",
 		SAVE: "Save",
+		RESET: "Reset Default",
 	},
 	TITLES: {
 		FAVORITE_QUOTES: "Favorite Quotes",
@@ -57,6 +60,7 @@ export const UI_TEXT = {
 		ALL_AVAILABLE_QUOTES: "All Available Quotes",
 		IMPORT_QUOTES: "Import Quotes",
 		CHANGE_IDLE_FREQUENCY: "Change Idle Frequency",
+		CHANGE_AVATAR: "Change Avatar Image",
 	},
 	LABELS: {
 		SWITCH_TO_FAV_MODE: "Switch to Favourite Mode",
@@ -69,6 +73,9 @@ export const UI_TEXT = {
 		IDLE_FREQUENCY_NAME: "Idle talk frequency (seconds)",
 		IDLE_FREQUENCY_DESC:
 			"How often does Gemmy speak when idle, in seconds.",
+		AVATAR_URL_NAME: "Avatar URL or Path",
+		AVATAR_URL_DESC:
+			"Enter a URL (https://...) or a local file path (file://...) for the avatar image. Leave empty to use default.",
 	},
 	MENU_ITEMS: {
 		COPY_CURRENT: "Copy Current Quote",
@@ -78,6 +85,7 @@ export const UI_TEXT = {
 		IMPORT: "Import Quotes",
 		EXPORT: "Export Quotes",
 		CHANGE_FREQUENCY: "Change Idle Frequency",
+		CHANGE_AVATAR: "Change Avatar",
 		HIDE_GEMMY: "Hide Gemmy",
 	},
 };
