@@ -96,6 +96,7 @@ If your plugin does not need CSS, delete this file.
 	width: var(--gemmy-size);
 	height: var(--gemmy-size);
 	border-radius: var(--gemmy-size);
+	object-fit: cover;
 }
 
 /* === BỎ MẸ CÁI ĐỐNG ARIA-LABEL CŨ ĐI, ĐÉO CẦN NỮA === */
