@@ -366,31 +366,29 @@ export class ChangeAvatarModal extends BaseGemmyModal {
 		fileInput.onchange = (e) => {
 			const file = (e.target as HTMLInputElement).files?.[0];
 			if (file) {
-				// @ts-ignore - 'path' property exists on File in Electron/Obsidian environment
-				const path = file.path;
-				if (path) {
-					// Convert backslashes to forward slashes for better cross-platform compatibility if needed,
-					// but usually local paths work as is or with file://
-					// For display and storage, we keep the path.
-					// We might want to prefix with file:// if it's not already,
-					// but let's just store the path and let the consumer handle the protocol if needed.
-					// However, for immediate feedback, let's just put the path.
+				// @ts-ignore
+				let path = file.path;
 
-					// If we want to be helpful, we can use a utility to convert to a proper URL,
-					// but sticking to the absolute path is what the user asked (indirectly).
+				if (!path) {
+					new Notice(
+						"Error: Cannot retrieve file path. Are you in a restricted environment?",
+					);
+					return;
+				}
 
-					// In obsidian context, using 'app://local/' + path is often required for <img> src.
-					// But for the setting, let's save the absolute path.
-					// The Main class logic currently just uses it as src.
-					// If src="C:\..." fails, we might need to fix Main.ts later.
-					// But for now, just populate the field.
+				// Normalize path (backslashes to forward slashes if needed, though Windows handles both in many contexts)
+				// For display in text field, keep it as is or normalize?
+				// Let's just use it.
 
-					currentPath = path;
+				currentPath = path;
+				if (textComponent) {
 					textComponent.setValue(path);
+					new Notice("File selected: " + file.name); // Feedback to user
+				} else {
+					new Notice("Error: Text component not initialized.");
 				}
 			}
 		};
-
 		const browseBtn = browseBtnContainer.createEl("button", {
 			text: UI_TEXT.BUTTONS.BROWSE_IMAGE,
 		});

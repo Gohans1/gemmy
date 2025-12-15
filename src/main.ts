@@ -360,7 +360,28 @@ export default class Gemmy extends Plugin {
 	getAvatarSource(): string {
 		const customPath = this.dataManager.settings.customAvatarPath;
 		if (customPath && customPath.trim() !== "") {
-			return customPath.trim();
+			const path = customPath.trim();
+			// Check if it's a URL
+			if (path.startsWith("http://") || path.startsWith("https://")) {
+				return path;
+			}
+			// Check if it's already a file URL
+			if (path.startsWith("file://") || path.startsWith("app://")) {
+				return path;
+			}
+			// Assume local path, convert to resource URL for Electron
+			// On Obsidian, app://local/ is preferred for local files outside vault,
+			// but file:/// might work depending on security settings.
+			// Let's try to convert to a valid file URL first as it's more standard.
+			// Windows path: C:\Users... -> file:///C:/Users...
+			// Unix path: /Users... -> file:///Users...
+
+			// Simple conversion
+			let normalizedPath = path.replace(/\\/g, "/");
+			if (!normalizedPath.startsWith("/")) {
+				normalizedPath = "/" + normalizedPath;
+			}
+			return "app://local" + normalizedPath;
 		}
 		return KAPILGUPTA_STATIC;
 	}
