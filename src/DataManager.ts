@@ -18,6 +18,7 @@ export class DataManager {
 	async load() {
 		const data: GemmyData = await this.plugin.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings);
+		if (!this.settings.playlist) this.settings.playlist = [];
 		this.allQuotes = data?.quotes || [];
 		this.favoriteQuotes = data?.favoriteQuotes || [];
 	}

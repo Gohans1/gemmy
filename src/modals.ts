@@ -4,6 +4,7 @@ import {
 	Notice,
 	Setting,
 	ButtonComponent,
+	TextComponent,
 	setIcon,
 } from "obsidian";
 import { DataManager } from "./DataManager";
@@ -16,6 +17,7 @@ abstract class BaseGemmyModal extends Modal {
 
 	onOpen() {
 		this.contentEl.empty();
+		this.contentEl.addClass("gemmy-modal");
 	}
 
 	onClose() {
@@ -47,7 +49,7 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		const { contentEl } = this;
 
 		// --- TIMER SETTINGS ---
-		contentEl.createEl("h3", { text: "Default Timer" });
+		contentEl.createEl("h3", { text: "Timer Settings" });
 		new Setting(contentEl)
 			.setName("Duration (minutes)")
 			.setDesc("Default time when starting a session")
@@ -71,7 +73,7 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		// --- PLAYLIST MANAGER ---
 		contentEl.createEl("h3", { text: "Playlist Manager" });
 		contentEl.createEl("p", {
-			text: "Click a track to play it immediately.",
+			text: "Manage your Focus Mode video playlist.",
 			cls: "setting-item-description",
 		});
 
@@ -89,24 +91,22 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		addDiv.style.gap = "5px";
 		addDiv.style.alignItems = "center";
 
-		const nameInput = addDiv.createEl("input", {
-			type: "text",
-			placeholder: "Track Name",
-		});
-		nameInput.style.flex = "1";
+		const nameInput = new TextComponent(addDiv).setPlaceholder(
+			"Track Name",
+		);
+		nameInput.inputEl.style.flex = "1";
 
-		const urlInput = addDiv.createEl("input", {
-			type: "text",
-			placeholder: "YouTube URL",
-		});
-		urlInput.style.flex = "2";
+		const urlInput = new TextComponent(addDiv).setPlaceholder(
+			"YouTube URL",
+		);
+		urlInput.inputEl.style.flex = "2";
 
-		const addBtn = new ButtonComponent(addDiv)
+		new ButtonComponent(addDiv)
 			.setButtonText("Add")
 			.setCta()
 			.onClick(async () => {
-				const name = nameInput.value.trim();
-				const url = urlInput.value.trim();
+				const name = nameInput.getValue().trim();
+				const url = urlInput.getValue().trim();
 				if (!name || !url) {
 					new Notice("Enter both name and URL");
 					return;
@@ -123,13 +123,13 @@ export class FocusSettingsModal extends BaseGemmyModal {
 					playlist: [...current, { name, url, id }],
 				});
 				new Notice("Track added!");
-				nameInput.value = "";
-				urlInput.value = "";
+				nameInput.setValue("");
+				urlInput.setValue("");
 				this.renderPlaylist(playlistContainer);
 			});
 	}
 
-	renderingPlaylist(container: HTMLElement) {
+	renderPlaylist(container: HTMLElement) {
 		container.empty();
 		const playlist = this.dataManager.settings.playlist || [];
 
@@ -172,37 +172,34 @@ export class FocusSettingsModal extends BaseGemmyModal {
 
 			// Move Up
 			if (index > 0) {
-				const upBtn = controls.createEl("button", {
-					cls: "clickable-icon",
-				});
-				setIcon(upBtn, "arrow-up");
-				upBtn.onclick = async (e) => {
-					e.stopPropagation();
-					const newPlaylist = [...playlist];
-					[newPlaylist[index - 1], newPlaylist[index]] = [
-						newPlaylist[index],
-						newPlaylist[index - 1],
-					];
+				const upBtn = new ButtonComponent(controls)
+					.setIcon("arrow-up")
+					.setTooltip("Move Up")
+					.onClick(async () => {
+						const newPlaylist = [...playlist];
+						[newPlaylist[index - 1], newPlaylist[index]] = [
+							newPlaylist[index],
+							newPlaylist[index - 1],
+						];
+						await this.dataManager.updateSettings({
+							playlist: newPlaylist,
+						});
+						this.renderPlaylist(container);
+					});
+			}
+
+			// Delete
+			const delBtn = new ButtonComponent(controls)
+				.setIcon("trash")
+				.setTooltip("Delete")
+				.onClick(async () => {
+					const newPlaylist = playlist.filter((_, i) => i !== index);
 					await this.dataManager.updateSettings({
 						playlist: newPlaylist,
 					});
 					this.renderPlaylist(container);
-				};
-			}
-
-			// Delete
-			const delBtn = controls.createEl("button", {
-				cls: "clickable-icon mod-warning",
-			});
-			setIcon(delBtn, "trash");
-			delBtn.onclick = async (e) => {
-				e.stopPropagation();
-				const newPlaylist = playlist.filter((_, i) => i !== index);
-				await this.dataManager.updateSettings({
-					playlist: newPlaylist,
 				});
-				this.renderPlaylist(container);
-			};
+			delBtn.buttonEl.addClass("mod-warning");
 		});
 	}
 
@@ -271,7 +268,7 @@ export class ViewFavoritesModal extends BaseGemmyModal {
 }
 
 export class AddUserQuoteModal extends BaseGemmyModal {
-	onSubmit: (quote: string) => void;
+	submit: (quote: string) => void;
 	constructor(app: App, onSubmit: (quote: string) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
@@ -285,7 +282,7 @@ export class AddUserQuoteModal extends BaseGemmyModal {
 			cls: CSS_CLASSES.QUOTE_TEXTAREA,
 			placeholder: UI_TEXT.LABELS.ENTER_QUOTE_PLACEHOLDER,
 		});
-		ttextarea.rows = 10;
+		textarea.rows = 10;
 		new Setting(contentEl).addButton((btn) =>
 			btn
 				.setButtonText(UI_TEXT.BUTTONS.SAVE)
@@ -318,7 +315,7 @@ export class AddQuoteModal extends BaseGemmyModal {
 		const textarea = contentEl.createEl("textarea", {
 			cls: CSS_CLASSES.QUOTE_TEXTAREA,
 		});
-		ttextarea.rows = 10;
+		textarea.rows = 10;
 		new Setting(contentEl).addButton((btn) =>
 			btn
 				.setButtonText(UI_TEXT.BUTTONS.SAVE)

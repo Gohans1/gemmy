@@ -61,14 +61,14 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Hide all buttons when focus mode is active, EXCEPT the focus button */
-.gemmy-button-container.focus-mode-active .gemmy-view-all-button,
-.gemmy-button-container.focus-mode-active .gemmy-history-button,
-.gemmy-button-container.focus-mode-active .gemmy-add-button,
-.gemmy-button-container.focus-mode-active .gemmy-copy-button,
-.gemmy-button-container.focus-mode-active .gemmy-next-button,
-.gemmy-button-container.focus-mode-active .gemmy-menu-button,
-.gemmy-button-container.focus-mode-active .gemmy-favorite-button,
-.gemmy-button-container.focus-mode-active .gemmy-toggle-mode-button {
+.gemmy-button-container.gemmy-focus-active .gemmy-view-all-button,
+.gemmy-button-container.gemmy-focus-active .gemmy-history-button,
+.gemmy-button-container.gemmy-focus-active .gemmy-add-button,
+.gemmy-button-container.gemmy-focus-active .gemmy-copy-button,
+.gemmy-button-container.gemmy-focus-active .gemmy-next-button,
+.gemmy-button-container.gemmy-focus-active .gemmy-menu-button,
+.gemmy-button-container.gemmy-focus-active .gemmy-favorite-button,
+.gemmy-button-container.gemmy-focus-active .gemmy-toggle-mode-button {
 	display: none !important;
 }
 
@@ -84,19 +84,41 @@ If your plugin does not need CSS, delete this file.
 .gemmy-menu-button,
 .gemmy-favorite-button,
 .gemmy-focus-button,
-.gemmy-toggle-mode-button {
+.gemmy-toggle-mode-button,
+.gemmy-focus-settings-button,
+.gemmy-bubble .clickable-icon {
 	padding: 1px 6px; /* ĐÃ LÀM CHO NÓ "BẸP" ĐI RỒI ĐẤY THẰNG LỒN */
 	font-size: 16px; /* Cho chữ nhỏ lại tí cho nó cân đối */
-	background-color: var(--background-modifier-hover);
+	background-color: var(
+		--interactive-normal
+	); /* Restored visible background */
 	color: var(--text-muted);
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--background-modifier-border); /* Restored visible border */
 	border-radius: 4px;
 	cursor: pointer;
 	opacity: 0.7;
 }
 
-.gemmy-focus-button:hover {
+.gemmy-button-container .hidden {
+	display: none !important;
+}
+
+.gemmy-view-all-button:hover,
+.gemmy-history-button:hover,
+.gemmy-add-button:hover,
+.gemmy-copy-button:hover,
+.gemmy-next-button:hover,
+.gemmy-menu-button:hover,
+.gemmy-favorite-button:hover,
+.gemmy-focus-button:hover,
+.gemmy-toggle-mode-button:hover,
+.gemmy-focus-settings-button:hover,
+.gemmy-bubble .clickable-icon:hover {
 	opacity: 1;
+	background-color: var(
+		--background-modifier-hover
+	); /* Apply background on hover */
+	border: 1px solid var(--background-modifier-border); /* Apply border on hover */
 }
 
 .gemmy-volume-slider {
@@ -111,24 +133,15 @@ If your plugin does not need CSS, delete this file.
 	display: block;
 }
 
-.gemmy-volume-slider.hidden {
+.gemmy-volume-slider.hidden,
+.gemmy-play-pause-button.hidden,
+.gemmy-focus-settings-button.hidden,
+.gemmy-music-selector.hidden,
+.gemmy-focus-controls-container.hidden {
 	display: none !important;
 }
 
-.gemmy-volume-slider:hover {
-	opacity: 1;
-}
-
-.gemmy-play-pause-button {
-	padding: 1px 6px;
-	font-size: 16px;
-	background-color: var(--background-modifier-hover);
-	color: var(--text-muted);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
-	cursor: pointer;
-	opacity: 0.7;
-}
+/* REMOVED DEDICATED .gemmy-play-pause-button BLOCK TO FIX STYLE INCONSISTENCY */
 
 .gemmy-play-pause-button:hover {
 	opacity: 1;
@@ -136,14 +149,10 @@ If your plugin does not need CSS, delete this file.
 	color: white;
 }
 
-.gemmy-play-pause-button.hidden {
-	display: none !important;
-}
-
-.focus-mode-active {
-	background-color: #ffebee;
-	border-radius: 8px;
-	padding: 2px;
+.gemmy-focus-active {
+	/* background-color: #ffebee; REMOVED to fix pink background issue */
+	/* border-radius: 8px; */
+	/* padding: 2px; */
 }
 
 .gemmy-bubble::after {
@@ -169,7 +178,7 @@ If your plugin does not need CSS, delete this file.
 
 /* Styling for Modals (View All, Favorites) */
 
-.modal-container ol {
+.gemmy-modal ol {
 	padding-inline-start: 20px;
 }
 .gemmy-quote-textarea {
@@ -198,7 +207,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* New styles for the View All Quotes modal */
-.modal-container ol li {
+.gemmy-modal ol li {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -236,7 +245,7 @@ If your plugin does not need CSS, delete this file.
 .gemmy-button-container button[data-tooltip]:hover::after {
 	content: attr(data-tooltip);
 	position: absolute;
-	bottom: 100%;
+	top: 100%; /* Move to below */
 	left: 50%;
 	transform: translateX(-50%);
 	padding: 4px 8px;
@@ -249,7 +258,7 @@ If your plugin does not need CSS, delete this file.
 	z-index: 1000;
 	pointer-events: none;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-	margin-bottom: 6px;
+	margin-top: 6px; /* Add space between button and tooltip */
 	font-weight: 600;
 	opacity: 1;
 	animation: tooltip-pop 0.1s ease-out forwards;

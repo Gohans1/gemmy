@@ -1,3 +1,5 @@
+# PROJECT RULES
+
 <project_stack>
 - bun (not npm)
 </project_stack>
@@ -5,8 +7,8 @@
 <coding rules>	
 - LUÔN LUÔN phải dùng hệ thống beads(bd) VÀ beads_viewer(bv) trước rồi mới được phép động tới sửa code hay nội dung
 - CẤM chạy lệnh bash `bun run dev` và `bun run build` trừ khi được cho phép, muốn chạy thì phải hỏi
-- LUÔN LUÔN SỬ DỤNG openskills beads ĐẦU TIÊN và ngay lập tức với Bash("openskills read beads"). Sau đó đọc toàn bộ file .md trong folder .claude\skills\beads\references\*.md bằng cách dùng bash `type`
-- 
+- LUÔN LUÔN SỬ DỤNG openskills beads ĐẦU TIÊN và ngay lập tức với Bash("openskills read beads").
+- Chỉ được thực thi 1 task trong beads trong 1 lần trả lời. sau đó user sẽ review task đó bạn làm rồi sẽ ra lệnh tiếp
 </coding rules>
 
 # Openskills
