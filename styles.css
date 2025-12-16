@@ -50,7 +50,31 @@ If your plugin does not need CSS, delete this file.
 	right: 4px;
 	display: flex;
 	gap: 4px;
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
+	pointer-events: none; /* Prevent accidental clicks when hidden */
 }
+
+.gemmy-bubble:hover .gemmy-button-container {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+/* Hide all buttons when focus mode is active, EXCEPT the focus button */
+.gemmy-button-container.focus-mode-active .gemmy-view-all-button,
+.gemmy-button-container.focus-mode-active .gemmy-history-button,
+.gemmy-button-container.focus-mode-active .gemmy-add-button,
+.gemmy-button-container.focus-mode-active .gemmy-copy-button,
+.gemmy-button-container.focus-mode-active .gemmy-next-button,
+.gemmy-button-container.focus-mode-active .gemmy-menu-button,
+.gemmy-button-container.focus-mode-active .gemmy-favorite-button,
+.gemmy-button-container.focus-mode-active .gemmy-toggle-mode-button {
+	display: none !important;
+}
+
+/* Ensure focus button is always visible in focus mode on hover (or handling container opacity) */
+/* Actually, the container opacity logic still applies (hidden by default, shown on hover).
+   But when shown, only the focus button should be there. */
 
 .gemmy-view-all-button,
 .gemmy-history-button,
@@ -59,6 +83,7 @@ If your plugin does not need CSS, delete this file.
 .gemmy-next-button,
 .gemmy-menu-button,
 .gemmy-favorite-button,
+.gemmy-focus-button,
 .gemmy-toggle-mode-button {
 	padding: 1px 6px; /* ĐÃ LÀM CHO NÓ "BẸP" ĐI RỒI ĐẤY THẰNG LỒN */
 	font-size: 16px; /* Cho chữ nhỏ lại tí cho nó cân đối */
@@ -70,15 +95,55 @@ If your plugin does not need CSS, delete this file.
 	opacity: 0.7;
 }
 
-.gemmy-view-all-button:hover,
-.gemmy-history-button:hover,
-.gemmy-add-button:hover,
-.gemmy-copy-button:hover,
-.gemmy-next-button:hover,
-.gemmy-menu-button:hover,
-.gemmy-favorite-button:hover,
-.gemmy-toggle-mode-button:hover {
+.gemmy-focus-button:hover {
 	opacity: 1;
+}
+
+.gemmy-volume-slider {
+	width: 100%;
+	height: 6px;
+	margin-top: 10px;
+	border-radius: 5px;
+	background: #d3d3d3;
+	outline: none;
+	opacity: 0.7;
+	transition: opacity 0.2s;
+	display: block;
+}
+
+.gemmy-volume-slider.hidden {
+	display: none !important;
+}
+
+.gemmy-volume-slider:hover {
+	opacity: 1;
+}
+
+.gemmy-play-pause-button {
+	padding: 1px 6px;
+	font-size: 16px;
+	background-color: var(--background-modifier-hover);
+	color: var(--text-muted);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	cursor: pointer;
+	opacity: 0.7;
+}
+
+.gemmy-play-pause-button:hover {
+	opacity: 1;
+	background-color: #d81b60;
+	color: white;
+}
+
+.gemmy-play-pause-button.hidden {
+	display: none !important;
+}
+
+.focus-mode-active {
+	background-color: #ffebee;
+	border-radius: 8px;
+	padding: 2px;
 }
 
 .gemmy-bubble::after {
@@ -161,4 +226,42 @@ If your plugin does not need CSS, delete this file.
 .history-delete-button:hover {
 	background-color: var(--background-modifier-error);
 	color: var(--text-on-accent);
+}
+
+/* === INSTANT TOOLTIPS (THE GODFATHER'S REQUEST) === */
+.gemmy-button-container button[data-tooltip] {
+	position: relative;
+}
+
+.gemmy-button-container button[data-tooltip]:hover::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 4px 8px;
+	background-color: var(--background-primary-alt);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	z-index: 1000;
+	pointer-events: none;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+	margin-bottom: 6px;
+	font-weight: 600;
+	opacity: 1;
+	animation: tooltip-pop 0.1s ease-out forwards;
+}
+
+@keyframes tooltip-pop {
+	0% {
+		opacity: 0;
+		transform: translateX(-50%) scale(0.9);
+	}
+	100% {
+		opacity: 1;
+		transform: translateX(-50%) scale(1);
+	}
 }

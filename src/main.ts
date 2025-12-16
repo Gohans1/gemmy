@@ -1,4 +1,4 @@
-import { App, Plugin, Notice, Menu, setIcon } from "obsidian";
+import { Plugin, Notice, Menu, setIcon } from "obsidian";
 import KAPILGUPTA_STATIC from "./kapilgupta.png";
 import { GemmySettingTab } from "./settings";
 import { DataManager } from "./DataManager";
@@ -17,11 +17,13 @@ import {
 	ImportModal,
 	ChangeFrequencyModal,
 	ChangeAvatarModal,
+	SetFocusMusicModal,
 } from "./modals";
 
 export default class Gemmy extends Plugin {
 	dataManager: DataManager;
-	isFavouriteMode: boolean = false; // Default to Normal Mode
+	isFavouriteMode = false; // Default to Normal Mode
+	isFocusMode = false;
 	gemmyEl: HTMLElement;
 	imageEl: HTMLElement;
 	chatBubbleEl: HTMLElement;
@@ -31,19 +33,25 @@ export default class Gemmy extends Plugin {
 	menuButtonEl: HTMLElement;
 	exportButtonEl: HTMLElement;
 	favoriteButtonEl: HTMLElement;
+	focusButtonEl: HTMLElement;
+	playPauseButtonEl: HTMLElement; // New Play/Pause button
 	toggleModeButtonEl: HTMLElement; // Button to switch modes
 	viewAllButtonEl: HTMLElement;
 	bubbleTimeout: number;
 	idleIntervalId: number;
-	appeared: boolean = false;
+	appeared = false;
 	quoteHistory: string[] = [];
-	historyIndex: number = 0;
+	historyIndex = 0;
+	timerInterval: number | null = null;
+	pomodoroTimeLeft = 0;
+	focusVolumeSliderEl: HTMLInputElement; // New volume slider
+	isPlayingMusic = false;
 
 	async onload() {
 		this.dataManager = new DataManager(this);
 		await this.dataManager.load();
 
-		let gemmyEl = (this.gemmyEl = createDiv(CSS_CLASSES.GEMMY_CONTAINER));
+		const gemmyEl = (this.gemmyEl = createDiv(CSS_CLASSES.GEMMY_CONTAINER));
 		this.imageEl = gemmyEl.createEl("img", {});
 		this.chatBubbleEl = gemmyEl.createDiv({
 			cls: [CSS_CLASSES.GEMMY_BUBBLE, CSS_CLASSES.HIDDEN],
@@ -51,16 +59,49 @@ export default class Gemmy extends Plugin {
 		this.bubbleContentEl = this.chatBubbleEl.createDiv({
 			cls: CSS_CLASSES.GEMMY_BUBBLE_CONTENT,
 		});
+
+		// Focus Music Volume Slider (Hidden by default)
+		this.focusVolumeSliderEl = this.chatBubbleEl.createEl("input", {
+			type: "range",
+			cls: "gemmy-volume-slider hidden",
+		});
+		this.focusVolumeSliderEl.min = "0";
+		this.focusVolumeSliderEl.max = "100";
+		this.focusVolumeSliderEl.value = "50"; // Default 50%
+		this.focusVolumeSliderEl.oninput = (e) => {
+			// @ts-ignore
+			const volume = parseInt(e.target.value);
+			this.setMusicVolume(volume);
+		};
+
 		const buttonContainer = this.chatBubbleEl.createDiv({
 			cls: CSS_CLASSES.GEMMY_BUTTON_CONTAINER,
 		});
+
+		// Play/Pause Button (initially hidden)
+		this.playPauseButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-play-pause-button hidden",
+			text: UI_TEXT.ICONS.PAUSE, // Default to Pause icon since it auto-plays
+		});
+		setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PAUSE);
+		this.playPauseButtonEl.setAttribute("data-tooltip", "Pause Music");
+		this.playPauseButtonEl.onclick = () => this.toggleMusicPlayback();
+
+		this.focusButtonEl = buttonContainer.createEl("button", {
+			cls: CSS_CLASSES.FOCUS_BUTTON,
+			text: UI_TEXT.ICONS.FOCUS_OFF,
+		});
+		this.focusButtonEl.setAttribute(
+			"data-tooltip",
+			COMMANDS.TOGGLE_FOCUS_MODE.name,
+		);
 
 		this.toggleModeButtonEl = buttonContainer.createEl("button", {
 			cls: CSS_CLASSES.TOGGLE_MODE_BUTTON,
 			text: UI_TEXT.ICONS.NORMAL_MODE,
 		});
 		this.toggleModeButtonEl.setAttribute(
-			"aria-label",
+			"data-tooltip",
 			UI_TEXT.LABELS.SWITCH_TO_FAV_MODE,
 		);
 
@@ -73,7 +114,7 @@ export default class Gemmy extends Plugin {
 			cls: CSS_CLASSES.MENU_BUTTON,
 		});
 		setIcon(this.menuButtonEl, UI_TEXT.ICONS.MENU);
-		this.menuButtonEl.setAttribute("aria-label", UI_TEXT.LABELS.MENU);
+		this.menuButtonEl.setAttribute("data-tooltip", UI_TEXT.LABELS.MENU);
 
 		this.previousButtonEl = buttonContainer.createEl("button", {
 			cls: CSS_CLASSES.NEXT_BUTTON,
@@ -85,6 +126,8 @@ export default class Gemmy extends Plugin {
 			text: UI_TEXT.BUTTONS.NEXT,
 		});
 
+		this.focusButtonEl.onclick = () => this.toggleFocusMode();
+
 		this.toggleModeButtonEl.onclick = () => {
 			this.isFavouriteMode = !this.isFavouriteMode;
 			if (this.isFavouriteMode) {
@@ -95,14 +138,14 @@ export default class Gemmy extends Plugin {
 				}
 				this.toggleModeButtonEl.innerText = UI_TEXT.ICONS.FAVORITE_MODE;
 				this.toggleModeButtonEl.setAttribute(
-					"aria-label",
+					"data-tooltip",
 					UI_TEXT.LABELS.SWITCH_TO_NORMAL_MODE,
 				);
 				new Notice(NOTICES.SWITCHED_TO_FAV);
 			} else {
 				this.toggleModeButtonEl.innerText = UI_TEXT.ICONS.NORMAL_MODE;
 				this.toggleModeButtonEl.setAttribute(
-					"aria-label",
+					"data-tooltip",
 					UI_TEXT.LABELS.SWITCH_TO_FAV_MODE,
 				);
 				new Notice(NOTICES.SWITCHED_TO_NORMAL);
@@ -203,6 +246,18 @@ export default class Gemmy extends Plugin {
 			menu.addSeparator();
 
 			// --- GROUP 3: SYSTEM ---
+			menu.addItem((item) =>
+				item
+					.setTitle(UI_TEXT.MENU_ITEMS.SET_MUSIC)
+					.setIcon(UI_TEXT.ICONS.HEADPHONES)
+					.onClick(() => {
+						new SetFocusMusicModal(
+							this.app,
+							this.dataManager,
+						).open();
+					}),
+			);
+
 			menu.addItem((item) =>
 				item
 					.setTitle(UI_TEXT.MENU_ITEMS.CHANGE_AVATAR)
@@ -321,6 +376,12 @@ export default class Gemmy extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: COMMANDS.TOGGLE_FOCUS_MODE.id,
+			name: COMMANDS.TOGGLE_FOCUS_MODE.name,
+			callback: () => this.toggleFocusMode(),
+		});
+
 		this.addSettingTab(
 			new GemmySettingTab(this.app, this, this.dataManager),
 		);
@@ -409,8 +470,176 @@ export default class Gemmy extends Plugin {
 		}
 	}
 
+	toggleFocusMode() {
+		this.isFocusMode = !this.isFocusMode;
+		const buttonContainer = this.chatBubbleEl.querySelector(
+			`.${CSS_CLASSES.GEMMY_BUTTON_CONTAINER}`,
+		);
+
+		if (this.isFocusMode) {
+			if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout); // Prevent auto-hide
+			this.focusButtonEl.innerText = UI_TEXT.ICONS.FOCUS_ON;
+			new Notice(NOTICES.FOCUS_MODE_ON);
+			this.imageEl.style.opacity = "1";
+			if (buttonContainer) buttonContainer.addClass("focus-mode-active");
+			this.focusVolumeSliderEl.removeClass(CSS_CLASSES.HIDDEN); // Show slider
+
+			// Show Play/Pause button
+			this.playPauseButtonEl.removeClass("hidden");
+			setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PAUSE); // Reset to pause (playing)
+			this.isPlayingMusic = true;
+
+			this.startPomodoro();
+
+			// Play focus music internally
+			this.playFocusMusic();
+		} else {
+			this.focusButtonEl.innerText = UI_TEXT.ICONS.FOCUS_OFF;
+			new Notice(NOTICES.FOCUS_MODE_OFF);
+			this.stopPomodoro();
+			this.stopFocusMusic();
+			this.imageEl.style.opacity = "1";
+			this.focusVolumeSliderEl.addClass(CSS_CLASSES.HIDDEN); // Hide slider
+
+			// Hide Play/Pause button
+			this.playPauseButtonEl.addClass("hidden");
+
+			if (buttonContainer)
+				buttonContainer.removeClass("focus-mode-active");
+			this.saySomething();
+		}
+	}
+
+	toggleMusicPlayback() {
+		if (this.isPlayingMusic) {
+			this.sendYouTubeCommand("pauseVideo", []);
+			setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PLAY);
+			this.playPauseButtonEl.setAttribute("data-tooltip", "Play Music");
+			this.isPlayingMusic = false;
+		} else {
+			this.sendYouTubeCommand("playVideo", []);
+			setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PAUSE);
+			this.playPauseButtonEl.setAttribute("data-tooltip", "Pause Music");
+			this.isPlayingMusic = true;
+		}
+	}
+
+	playFocusMusic() {
+		const musicUrl = this.dataManager.settings.focusMusicUrl;
+		if (!musicUrl || musicUrl.trim() === "") {
+			// If no music URL, hide play button to avoid confusion
+			this.playPauseButtonEl.addClass("hidden");
+			return;
+		}
+
+		// Extract YouTube Video ID
+		const videoId = this.extractYouTubeId(musicUrl);
+
+		if (videoId) {
+			// Create hidden iframe for YouTube
+			const iframe = document.createElement("iframe");
+			iframe.id = "gemmy-focus-music-player";
+			// enablejsapi=1 is crucial for postMessage control
+			// origin is needed for some CORS policies on postMessage
+			iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&controls=0&origin=${window.location.origin}`;
+
+			// DO NOT use display: none, it blocks autoplay in some environments
+			iframe.style.width = "1px";
+			iframe.style.height = "1px";
+			iframe.style.opacity = "0.01";
+			iframe.style.position = "absolute";
+			iframe.style.top = "-9999px";
+			iframe.style.left = "-9999px";
+			iframe.style.pointerEvents = "none";
+			iframe.setAttribute("tabindex", "-1");
+
+			iframe.allow = "autoplay; encrypted-media";
+			document.body.appendChild(iframe);
+
+			// Optimize: Force 144p quality after it loads
+			iframe.onload = () => {
+				// We need a slight delay to ensure player is ready to receive messages
+				setTimeout(() => {
+					this.sendYouTubeCommand("setPlaybackQuality", ["small"]);
+					this.sendYouTubeCommand("playVideo", []); // Force play
+
+					// Set initial volume from slider
+					// @ts-ignore
+					const vol = parseInt(this.focusVolumeSliderEl.value);
+					this.setMusicVolume(vol);
+				}, 1500); // Increased delay slightly
+			};
+		}
+	}
+	setMusicVolume(volume: number) {
+		this.sendYouTubeCommand("setVolume", [volume]);
+	}
+
+	sendYouTubeCommand(func: string, args: any[]) {
+		const iframe = document.getElementById(
+			"gemmy-focus-music-player",
+		) as HTMLIFrameElement;
+		if (iframe && iframe.contentWindow) {
+			iframe.contentWindow.postMessage(
+				JSON.stringify({
+					event: "command",
+					func: func,
+					args: args,
+				}),
+				"*",
+			);
+		}
+	}
+
+	stopFocusMusic() {
+		// Remove YouTube iframe
+		const iframe = document.getElementById("gemmy-focus-music-player");
+		if (iframe) iframe.remove();
+	}
+
+	extractYouTubeId(url: string): string | null {
+		const regExp =
+			/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+		const match = url.match(regExp);
+		return match && match[2].length === 11 ? match[2] : null;
+	}
+
+	startPomodoro() {
+		this.stopPomodoro();
+		this.pomodoroTimeLeft = CONSTANTS.POMODORO_DURATION;
+		this.updatePomodoroDisplay();
+		this.chatBubbleEl.removeClass(CSS_CLASSES.HIDDEN);
+
+		this.timerInterval = window.setInterval(() => {
+			this.pomodoroTimeLeft--;
+			if (this.pomodoroTimeLeft <= 0) {
+				this.stopPomodoro();
+				this.bubbleContentEl.innerText = "Time's up! Take a break! 🍅";
+			} else {
+				this.updatePomodoroDisplay();
+			}
+		}, 1000);
+	}
+
+	stopPomodoro() {
+		if (this.timerInterval) {
+			window.clearInterval(this.timerInterval);
+			this.timerInterval = null;
+		}
+	}
+
+	updatePomodoroDisplay() {
+		const minutes = Math.floor(this.pomodoroTimeLeft / 60);
+		const seconds = this.pomodoroTimeLeft % 60;
+		const timeString = `${minutes.toString().padStart(2, "0")}:${seconds
+			.toString()
+			.padStart(2, "0")}`;
+		this.bubbleContentEl.innerText = `${UI_TEXT.ICONS.FOCUS_ON} ${timeString}`;
+	}
+
 	saySomething() {
 		if (!this.appeared) return;
+		if (this.isFocusMode) return;
 		if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
 
 		let sourceQuotes = this.dataManager.allQuotes;
@@ -428,7 +657,7 @@ export default class Gemmy extends Plugin {
 		if (sourceQuotes.length === 0) return;
 
 		this.historyIndex = 0;
-		let randomThing =
+		const randomThing =
 			sourceQuotes[Math.floor(Math.random() * sourceQuotes.length)];
 		this.quoteHistory.unshift(randomThing);
 		if (this.quoteHistory.length > 5) this.quoteHistory.pop();
@@ -446,6 +675,7 @@ export default class Gemmy extends Plugin {
 	}
 
 	onunload() {
+		this.stopPomodoro();
 		this.disappear();
 	}
 

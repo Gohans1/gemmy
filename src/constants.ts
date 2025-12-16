@@ -3,11 +3,13 @@ import { GemmySettings } from "./types";
 export const CONSTANTS = {
 	BUBBLE_DURATION: 5000,
 	DEFAULT_IDLE_FREQUENCY: 5,
+	POMODORO_DURATION: 1500,
 };
 
 export const DEFAULT_SETTINGS: GemmySettings = {
 	idleTalkFrequency: 5,
 	customAvatarPath: "",
+	focusMusicUrl: "",
 };
 
 export const CSS_CLASSES = {
@@ -15,6 +17,7 @@ export const CSS_CLASSES = {
 	GEMMY_BUBBLE: "gemmy-bubble",
 	GEMMY_BUBBLE_CONTENT: "gemmy-bubble-content",
 	GEMMY_BUTTON_CONTAINER: "gemmy-button-container",
+	FOCUS_BUTTON: "gemmy-focus-button",
 	TOGGLE_MODE_BUTTON: "gemmy-toggle-mode-button",
 	FAVORITE_BUTTON: "gemmy-favorite-button",
 	MENU_BUTTON: "gemmy-menu-button",
@@ -33,6 +36,8 @@ export const UI_TEXT = {
 		FAVORITE_MODE: "⭐",
 		HEART_EMPTY: "🤍",
 		HEART_FILLED: "❤️",
+		FOCUS_ON: "🧘‍♂️",
+		FOCUS_OFF: "🎯",
 		MENU: "more-vertical",
 		COPY: "copy",
 		STAR: "star",
@@ -43,6 +48,9 @@ export const UI_TEXT = {
 		CLOCK: "clock",
 		EYE_OFF: "eye-off",
 		IMAGE: "image",
+		HEADPHONES: "headphones",
+		PLAY: "play",
+		PAUSE: "pause",
 	},
 	BUTTONS: {
 		PREV: "Prev",
@@ -62,6 +70,7 @@ export const UI_TEXT = {
 		IMPORT_QUOTES: "Import Quotes",
 		CHANGE_IDLE_FREQUENCY: "Change Idle Frequency",
 		CHANGE_AVATAR: "Change Avatar Image",
+		SET_FOCUS_MUSIC: "Set Focus Music",
 	},
 	LABELS: {
 		SWITCH_TO_FAV_MODE: "Switch to Favourite Mode",
@@ -77,6 +86,9 @@ export const UI_TEXT = {
 		AVATAR_URL_NAME: "Avatar URL or Path",
 		AVATAR_URL_DESC:
 			"Enter a URL (https://...) or a local file path (file://...) for the avatar image. Leave empty to use default.",
+		FOCUS_MUSIC_URL_NAME: "Focus Music URL",
+		FOCUS_MUSIC_URL_DESC:
+			"Enter a YouTube URL (or any music link) to play when Focus Mode starts.",
 	},
 	MENU_ITEMS: {
 		COPY_CURRENT: "Copy Current Quote",
@@ -87,6 +99,7 @@ export const UI_TEXT = {
 		EXPORT: "Export Quotes",
 		CHANGE_FREQUENCY: "Change Idle Frequency",
 		CHANGE_AVATAR: "Change Avatar",
+		SET_MUSIC: "Set Focus Music",
 		HIDE_GEMMY: "Hide Gemmy",
 	},
 };
@@ -114,6 +127,8 @@ export const NOTICES = {
 		"No new quotes were imported. They might be duplicates or empty.",
 	NEW_QUOTES_SAVED: (count: number) => `${count} new quote(s) saved!`,
 	COPIED_SNIPPET: (text: string) => `Copied: "${text.slice(0, 20)}..."`,
+	FOCUS_MODE_ON: "Gemmy: Focus Mode ON. Time to work! 🍅",
+	FOCUS_MODE_OFF: "Gemmy: Focus Mode OFF. Great job! ☕",
 };
 
 export const COMMANDS = {
@@ -126,4 +141,5 @@ export const COMMANDS = {
 		name: "View favorite quotes",
 	},
 	IMPORT_QUOTES: { id: "import-quotes", name: "Import quotes from file" },
+	TOGGLE_FOCUS_MODE: { id: "toggle-focus-mode", name: "Toggle Focus Mode" },
 };
