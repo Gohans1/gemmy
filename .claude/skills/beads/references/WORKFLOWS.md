@@ -31,6 +31,7 @@ Detailed step-by-step workflows for common bd usage patterns with checklists.
 
 ```
 Session Start (when bd is available):
+- [ ] Run bv --robot-insights --json
 - [ ] Run bd ready --json
 - [ ] Report: "X items ready to work on: [summary]"
 - [ ] If using global ~/.beads, note this in report
@@ -38,7 +39,7 @@ Session Start (when bd is available):
 - [ ] Suggest next action based on findings
 ```
 
-**Pattern**: Always run `bd ready` when starting work where bd is available. Report status immediately to establish shared context.
+**Pattern**: Always run `bv --robot-insights`, `bd ready` when starting work where bd is available. Report status immediately to establish shared context.
 
 **Database selection**: bd auto-discovers which database to use (project-local `.beads/` takes precedence over global `~/.beads/`).
 
@@ -129,7 +130,7 @@ Issue Lifecycle:
 - [ ] During: Update acceptance criteria if requirements clarify
 - [ ] During: Add dependencies if blockers discovered
 - [ ] Complete: Close with summary of what was done
-- [ ] After: Check bd ready to see what unblocked
+- [ ] After: Check `bv --robot-insights` `bd ready` to see what unblocked
 ```
 
 **Pattern**: Keep bd status current so project state is always accurate.
@@ -153,7 +154,7 @@ Epic Planning Workflow:
 - [ ] Create each child task
 - [ ] Add parent-child dependencies from epic to each child
 - [ ] Add blocks dependencies between children if needed
-- [ ] Use bd ready to work through tasks in dependency order
+- [ ] Use bv --robot-insights, bd ready to work through tasks in dependency order
 ```
 
 **Example**: OAuth Integration Epic
@@ -222,7 +223,7 @@ Actions:
 
 ```
 Resume Workflow:
-- [ ] Run bd ready to see available work
+- [ ] Run bv --robot-insights, bd ready to see available work
 - [ ] Run bd stats for project overview
 - [ ] List recent closed issues for context
 - [ ] Show details on issue to work on
@@ -430,7 +431,7 @@ Research or investigation work:
 1. Create issues for each refactoring step
 2. Add blocks dependencies for correct order
 3. Work through in dependency order
-4. bd ready automatically shows next step
+4. bv --robot-insights, bd ready automatically shows next step
 5. Each completion unblocks next work
 ```
 
@@ -478,7 +479,7 @@ Research or investigation work:
 - [ ] Implementation done
 - [ ] Tests passing
 - [ ] Close issue with summary
-- [ ] Check bd ready for unblocked work
+- [ ] Check bv --robot-insights, bd ready for unblocked work
 - [ ] Report completion and next available work
 ```
 
@@ -545,4 +546,3 @@ Research or investigation work:
 2. Use bd ready to focus on unblocked work
 3. Consider closing old issues that no longer matter
 4. Use labels for organization
-

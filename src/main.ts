@@ -17,7 +17,6 @@ import {
 	ImportModal,
 	ChangeFrequencyModal,
 	ChangeAvatarModal,
-	SetFocusMusicModal,
 } from "./modals";
 
 export default class Gemmy extends Plugin {
@@ -34,8 +33,8 @@ export default class Gemmy extends Plugin {
 	exportButtonEl: HTMLElement;
 	favoriteButtonEl: HTMLElement;
 	focusButtonEl: HTMLElement;
-	playPauseButtonEl: HTMLElement; // New Play/Pause button
-	toggleModeButtonEl: HTMLElement; // Button to switch modes
+	playPauseButtonEl: HTMLElement;
+	toggleModeButtonEl: HTMLElement;
 	viewAllButtonEl: HTMLElement;
 	bubbleTimeout: number;
 	idleIntervalId: number;
@@ -44,10 +43,11 @@ export default class Gemmy extends Plugin {
 	historyIndex = 0;
 	timerInterval: number | null = null;
 	pomodoroTimeLeft = 0;
-	focusVolumeSliderEl: HTMLInputElement; // New volume slider
+	focusVolumeSliderEl: HTMLInputElement;
 	isPlayingMusic = false;
+    currentMusicId: string | null = null;
 
-	async onload() {
+	aSync onload() {
 		this.dataManager = new DataManager(this);
 		await this.dataManager.load();
 
@@ -81,7 +81,7 @@ export default class Gemmy extends Plugin {
 		// Play/Pause Button (initially hidden)
 		this.playPauseButtonEl = buttonContainer.createEl("button", {
 			cls: "gemmy-play-pause-button hidden",
-			text: UI_TEXT.ICONS.PAUSE, // Default to Pause icon since it auto-plays
+			text: UI_TEXT.ICONS.PAUSE,
 		});
 		setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PAUSE);
 		this.playPauseButtonEl.setAttribute("data-tooltip", "Pause Music");
@@ -248,18 +248,6 @@ export default class Gemmy extends Plugin {
 			// --- GROUP 3: SYSTEM ---
 			menu.addItem((item) =>
 				item
-					.setTitle(UI_TEXT.MENU_ITEMS.SET_MUSIC)
-					.setIcon(UI_TEXT.ICONS.HEADPHONES)
-					.onClick(() => {
-						new SetFocusMusicModal(
-							this.app,
-							this.dataManager,
-						).open();
-					}),
-			);
-
-			menu.addItem((item) =>
-				item
 					.setTitle(UI_TEXT.MENU_ITEMS.CHANGE_AVATAR)
 					.setIcon(UI_TEXT.ICONS.IMAGE)
 					.onClick(() => {
@@ -422,22 +410,12 @@ export default class Gemmy extends Plugin {
 		const customPath = this.dataManager.settings.customAvatarPath;
 		if (customPath && customPath.trim() !== "") {
 			const path = customPath.trim();
-			// Check if it's a URL
 			if (path.startsWith("http://") || path.startsWith("https://")) {
 				return path;
 			}
-			// Check if it's already a file URL
 			if (path.startsWith("file://") || path.startsWith("app://")) {
 				return path;
 			}
-			// Assume local path, convert to resource URL for Electron
-			// On Obsidian, app://local/ is preferred for local files outside vault,
-			// but file:/// might work depending on security settings.
-			// Let's try to convert to a valid file URL first as it's more standard.
-			// Windows path: C:\Users... -> file:///C:/Users...
-			// Unix path: /Users... -> file:///Users...
-
-			// Simple conversion
 			let normalizedPath = path.replace(/\\/g, "/");
 			if (!normalizedPath.startsWith("/")) {
 				normalizedPath = "/" + normalizedPath;
@@ -482,26 +460,98 @@ export default class Gemmy extends Plugin {
 			new Notice(NOTICES.FOCUS_MODE_ON);
 			this.imageEl.style.opacity = "1";
 			if (buttonContainer) buttonContainer.addClass("focus-mode-active");
-			this.focusVolumeSliderEl.removeClass(CSS_CLASSES.HIDDEN); // Show slider
 
-			// Show Play/Pause button
+            // --- FOCUS MODE UI SETUP ---
+            this.bubbleContentEl.empty();
+
+            // 1. Timer Container
+            const timerContainer = this.bubbleContentEl.createDiv("gemmy-focus-timer-container");
+            timerContainer.style.display = "flex";
+            timerContainer.style.alignItems = "center";
+            timerContainer.style.justifyContent = "center";
+            timerContainer.style.gap = "5px";
+            timerContainer.style.marginBottom = "5px";
+
+            timerContainer.createSpan({text: UI_TEXT.ICONS.FOCUS_ON}); // Icon
+
+            // Editable Timer
+            const timerInput = timerContainer.createEl("input", {
+                type: "number",
+                cls: "gemmy-focus-timer-input"
+            });
+            timerInput.style.width = "50px";
+            timerInput.style.background = "transparent";
+            timerInput.style.border = "none";
+            timerInput.style.textAlign = "center";
+            timerInput.style.fontWeight = "bold";
+            timerInput.style.fontSize = "1.2em";
+
+            // Initial Time
+            const defaultMins = this.dataManager.settings.focusDuration || 25;
+            this.pomodoroTimeLeft = defaultMins * 60;
+
+            // Update Timer UI helper
+            const updateTimerUI = () => {
+                const mins = Math.floor(this.pomodoroTimeLeft / 60);
+                timerInput.value = mins.toString();
+            };
+            updateTimerUI();
+
+            // Allow changing time on the fly
+            timerInput.onchange = () => {
+                const newMins = parseInt(timerInput.value);
+                if(!isNaN(newMins) && newMins > 0) {
+                    this.pomodoroTimeLeft = newMins * 60;
+                }
+            };
+
+            // 2. Music Selector
+            const musicSelector = this.bubbleContentEl.createEl("select", {
+                cls: "gemmy-music-selector"
+            });
+            musicSelector.style.width = "100%";
+            musicSelector.style.marginBottom = "5px";
+            musicSelector.style.fontSize = "0.9em";
+
+            const playlist = this.dataManager.settings.playlist || [];
+            if(playlist.length > 0) {
+                playlist.forEach(track => {
+                    const opt = musicSelector.createEl("option", {
+                        text: track.name,
+                        value: track.id
+                    });
+                });
+
+                // Play first track by default
+                this.currentMusicId = playlist[0].id;
+                this.playFocusMusic(this.currentMusicId);
+
+                // Change track event
+                musicSelector.onchange = () => {
+                    this.currentMusicId = musicSelector.value;
+                    this.playFocusMusic(this.currentMusicId);
+                };
+            } else {
+                const opt = musicSelector.createEl("option", {text: "No music in playlist"});
+                musicSelector.disabled = true;
+            }
+
+            // --- END FOCUS MODE UI SETUP ---
+
+			this.focusVolumeSliderEl.removeClass(CSS_CLASSES.HIDDEN);
 			this.playPauseButtonEl.removeClass("hidden");
-			setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PAUSE); // Reset to pause (playing)
+			setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PAUSE);
 			this.isPlayingMusic = true;
 
-			this.startPomodoro();
+			this.startPomodoro(timerInput); // Pass input to update it
 
-			// Play focus music internally
-			this.playFocusMusic();
 		} else {
 			this.focusButtonEl.innerText = UI_TEXT.ICONS.FOCUS_OFF;
 			new Notice(NOTICES.FOCUS_MODE_OFF);
 			this.stopPomodoro();
 			this.stopFocusMusic();
 			this.imageEl.style.opacity = "1";
-			this.focusVolumeSliderEl.addClass(CSS_CLASSES.HIDDEN); // Hide slider
-
-			// Hide Play/Pause button
+			this.focusVolumeSliderEl.addClass(CSS_CLASSES.HIDDEN);
 			this.playPauseButtonEl.addClass("hidden");
 
 			if (buttonContainer)
@@ -524,26 +574,22 @@ export default class Gemmy extends Plugin {
 		}
 	}
 
-	playFocusMusic() {
-		const musicUrl = this.dataManager.settings.focusMusicUrl;
-		if (!musicUrl || musicUrl.trim() === "") {
-			// If no music URL, hide play button to avoid confusion
-			this.playPauseButtonEl.addClass("hidden");
-			return;
-		}
+	playFocusMusic(videoId?: string) {
+        // If no ID provided, try to use current or first in playlist
+        if (!videoId) {
+            const playlist = this.dataManager.settings.playlist || [];
+            if(playlist.length > 0) videoId = playlist[0].id;
+            else return; // No music to play
+        }
 
-		// Extract YouTube Video ID
-		const videoId = this.extractYouTubeId(musicUrl);
+		// Remove existing player if any (to switch tracks)
+        this.stopFocusMusic();
 
 		if (videoId) {
-			// Create hidden iframe for YouTube
 			const iframe = document.createElement("iframe");
 			iframe.id = "gemmy-focus-music-player";
-			// enablejsapi=1 is crucial for postMessage control
-			// origin is needed for some CORS policies on postMessage
 			iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&enablejsapi=1&controls=0&origin=${window.location.origin}`;
 
-			// DO NOT use display: none, it blocks autoplay in some environments
 			iframe.style.width = "1px";
 			iframe.style.height = "1px";
 			iframe.style.opacity = "0.01";
@@ -556,18 +602,14 @@ export default class Gemmy extends Plugin {
 			iframe.allow = "autoplay; encrypted-media";
 			document.body.appendChild(iframe);
 
-			// Optimize: Force 144p quality after it loads
 			iframe.onload = () => {
-				// We need a slight delay to ensure player is ready to receive messages
 				setTimeout(() => {
 					this.sendYouTubeCommand("setPlaybackQuality", ["small"]);
-					this.sendYouTubeCommand("playVideo", []); // Force play
-
-					// Set initial volume from slider
+					this.sendYouTubeCommand("playVideo", []);
 					// @ts-ignore
 					const vol = parseInt(this.focusVolumeSliderEl.value);
 					this.setMusicVolume(vol);
-				}, 1500); // Increased delay slightly
+				}, 1500);
 			};
 		}
 	}
@@ -592,31 +634,38 @@ export default class Gemmy extends Plugin {
 	}
 
 	stopFocusMusic() {
-		// Remove YouTube iframe
 		const iframe = document.getElementById("gemmy-focus-music-player");
 		if (iframe) iframe.remove();
 	}
 
-	extractYouTubeId(url: string): string | null {
-		const regExp =
-			/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-		const match = url.match(regExp);
-		return match && match[2].length === 11 ? match[2] : null;
-	}
-
-	startPomodoro() {
+	startPomodoro(displayInput?: HTMLInputElement) {
 		this.stopPomodoro();
-		this.pomodoroTimeLeft = CONSTANTS.POMODORO_DURATION;
-		this.updatePomodoroDisplay();
-		this.chatBubbleEl.removeClass(CSS_CLASSES.HIDDEN);
-
 		this.timerInterval = window.setInterval(() => {
 			this.pomodoroTimeLeft--;
 			if (this.pomodoroTimeLeft <= 0) {
 				this.stopPomodoro();
-				this.bubbleContentEl.innerText = "Time's up! Take a break! 🍅";
+				this.bubbleContentEl.empty();
+                this.bubbleContentEl.createDiv({text: "Time's up! Take a break! 🍅", cls: "gemmy-focus-finished"});
+                // Reset UI after 5 seconds or click?
+                // For now just leave it message
 			} else {
-				this.updatePomodoroDisplay();
+                if(displayInput) {
+                    // Only update display every minute change to allow editing?
+                    // No, update continuously but maybe format as MM:SS?
+                    // User wanted "input minutes".
+                    // Let's stick to MM:SS display in the input? No, input type=number handles numbers best.
+                    // Actually, let's switch display to a Span for Countdown and Input for setting.
+                    // Re-eval: User wants "custom timer".
+                    // Implementation in toggleFocusMode used input type="number".
+                    // Let's update that input to show remaining minutes rounded up?
+                    // Or better: Replace input with countdown text when running?
+
+                    // Simple approach: Update value to minutes remaining
+                    const mins = Math.ceil(this.pomodoroTimeLeft / 60);
+                    if(document.activeElement !== displayInput) {
+                        displayInput.value = mins.toString();
+                    }
+                }
 			}
 		}, 1000);
 	}
@@ -628,13 +677,9 @@ export default class Gemmy extends Plugin {
 		}
 	}
 
+    // Deprecated but kept if needed for reference, though new UI handles display
 	updatePomodoroDisplay() {
-		const minutes = Math.floor(this.pomodoroTimeLeft / 60);
-		const seconds = this.pomodoroTimeLeft % 60;
-		const timeString = `${minutes.toString().padStart(2, "0")}:${seconds
-			.toString()
-			.padStart(2, "0")}`;
-		this.bubbleContentEl.innerText = `${UI_TEXT.ICONS.FOCUS_ON} ${timeString}`;
+        // Logic moved to startPomodoro callback
 	}
 
 	saySomething() {
@@ -662,6 +707,7 @@ export default class Gemmy extends Plugin {
 		this.quoteHistory.unshift(randomThing);
 		if (this.quoteHistory.length > 5) this.quoteHistory.pop();
 
+        this.bubbleContentEl.empty(); // Clear focus UI if any
 		this.bubbleContentEl.innerText = randomThing;
 
 		this.updateFavoriteButtonState(randomThing);

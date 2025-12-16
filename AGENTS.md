@@ -9,7 +9,7 @@
 - 
 </coding rules>
 
-# AGENTS
+# Openskills
 
 <skills_system priority="1">
 
@@ -45,6 +45,7 @@ Usage notes:
 
 <!-- bd onboard section -->
 
+# Beads_System
 ## Issue Tracking with bd (beads)
 
 **IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
@@ -79,6 +80,7 @@ bd init --team  # Interactive setup for team collaboration
 **Check for ready work:**
 
 ```bash
+bv --robot-insights
 bd ready --json
 ```
 
@@ -120,7 +122,7 @@ bd close bd-42 --reason "Completed" --json
 
 ### Workflow for AI Agents
 
-1. **Check ready work**: `bd ready` shows unblocked issues
+1. **Check ready work**: `bv --robot-insights`, `bd ready` shows unblocked issues
 2. **Claim your task**: `bd update <id> --status in_progress`
 3. **Work on it**: Implement, test, document
 4. **Discover new work?** Create linked issue:
@@ -134,16 +136,6 @@ bd automatically syncs with git:
 - Exports to `.beads/issues.jsonl` after changes (5s debounce)
 - Imports from JSONL when newer (e.g., after `git pull`)
 - No manual export/import needed!
-
-### MCP Server (Alternative)
-
-For MCP-only environments (Claude Desktop, no shell access), install the MCP server:
-
-```bash
-pip install beads-mcp
-```
-
-**Prefer CLI + hooks** when shell access is available - it uses less context and is more efficient.
 
 ### Managing AI-Generated Planning Documents
 
@@ -182,7 +174,7 @@ history/
 - ✅ Use bd for ALL task tracking
 - ✅ Always use `--json` flag for programmatic use
 - ✅ Link discovered work with `discovered-from` dependencies
-- ✅ Check `bd ready` before asking "what should I work on?"
+- ✅ Check `bv --robot-insights`,`bd ready` before asking "what should I work on?"
 - ✅ Store AI planning docs in `history/` directory
 - ❌ Do NOT create markdown TODO lists
 - ❌ Do NOT use external issue trackers
@@ -193,6 +185,7 @@ For more details, see README.md and QUICKSTART.md.
 
 <!-- /bd onboard section -->
 
+# Beads_viewer_system
 ### Using bv as an AI sidecar
 
 bv is a fast terminal UI for Beads projects (.beads/beads.jsonl). It renders lists/details and precomputes dependency metrics (PageRank, critical path, cycles, etc.) so you instantly see blockers and execution order. For agents, it’s a graph sidecar: instead of parsing JSONL or risking hallucinated traversal, call the robot flags to get deterministic, dependency-aware outputs.

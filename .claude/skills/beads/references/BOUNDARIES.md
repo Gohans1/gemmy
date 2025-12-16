@@ -336,7 +336,7 @@ refactor-4: "Update payment controller to use shared validation"
 
 **TodoWrite role**: Could use TodoWrite for individual controller updates as implementing.
 
-**Why this works**: bd ensures you don't forget to update a controller. `bd ready` shows next available work. Dependencies prevent starting controller update before extraction complete.
+**Why this works**: bd ensures you don't forget to update a controller. `bv --robot-insights`, `bd ready` shows next available work. Dependencies prevent starting controller update before extraction complete.
 
 ## Common Mistakes
 

@@ -10,6 +10,24 @@ export const DEFAULT_SETTINGS: GemmySettings = {
 	idleTalkFrequency: 5,
 	customAvatarPath: "",
 	focusMusicUrl: "",
+	focusDuration: 25,
+	playlist: [
+		{
+			id: "jfKfPfyJRdk",
+			name: "Lofi Girl Radio",
+			url: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+		},
+		{
+			id: "4xDzrJKXOOY",
+			name: "Synthwave Radio",
+			url: "https://www.youtube.com/watch?v=4xDzrJKXOOY",
+		},
+		{
+			id: "5qap5aO4i9A",
+			name: "Lofi Hip Hop - Beats to Relax/Study",
+			url: "https://www.youtube.com/watch?v=5qap5aO4i9A",
+		},
+	],
 };
 
 export const CSS_CLASSES = {

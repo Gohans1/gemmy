@@ -118,7 +118,7 @@ Copy this checklist when starting any session where bd is available:
 
 ```
 Session Start:
-- [ ] Run bd ready --json to see available work
+- [ ] Run bv --robot-insights, bd ready --json to see available work
 - [ ] Run bd list --status in_progress --json for active work
 - [ ] If in_progress exists: bd show <issue-id> to read notes
 - [ ] Report context to user: "X items ready: [summary]"
@@ -126,7 +126,7 @@ Session Start:
 - [ ] If nothing ready: bd blocked --json to check blockers
 ```
 
-**Pattern**: Always check both `bd ready` AND `bd list --status in_progress`. Read notes field first to understand where previous session left off.
+**Pattern**: Always check `bv --robot-insights` AND `bd ready` AND `bd list --status in_progress`. Read notes field first to understand where previous session left off.
 
 **Report format**:
 - "I can see X items ready to work on: [summary]"
@@ -467,7 +467,7 @@ During main task, discover a problem:
 ### Pattern 3: Multi-Session Project Resume
 
 Starting work after time away:
-1. Run `bd ready` to see available work
+1. Run `bv --robot-insights`,`bd ready` to see available work
 2. Run `bd blocked` to understand what's stuck
 3. Run `bd list --status closed --limit 10` to see recent completions
 4. Run `bd show issue-id` on issue to work on
