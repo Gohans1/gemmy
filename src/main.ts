@@ -17,7 +17,7 @@ import {
 	ImportModal,
 	ChangeFrequencyModal,
 	ChangeAvatarModal,
-	MusicSelectionModal,
+	FocusSettingsModal,
 } from "./modals";
 
 export default class Gemmy extends Plugin {
@@ -40,7 +40,7 @@ export default class Gemmy extends Plugin {
 	// Focus Mode Elements
 	focusVolumeSliderEl: HTMLInputElement;
 	playPauseButtonEl: HTMLElement;
-	musicMenuButtonEl: HTMLElement;
+	focusSettingsButtonEl: HTMLElement;
 
 bubbleTimeout: number;
 	idleIntervalId: number;
@@ -68,7 +68,7 @@ bubbleTimeout: number;
 			cls: CSS_CLASSES.GEMMY_BUBBLE_CONTENT,
 		});
 
-		// --- FOCUS MODE CONTROLS (Initially Hidden) ---
+		// --- FOCUS MODE CONTROLS ---
 		this.focusVolumeSliderEl = this.chatBubbleEl.createEl("input", {
 			type: "range",
 			cls: "gemmy-volume-slider hidden",
@@ -86,14 +86,14 @@ bubbleTimeout: number;
 			cls: CSS_CLASSES.GEMMY_BUTTON_CONTAINER,
 		});
 
-		// 1. Music Menu Button (Only for Focus Mode)
-		this.musicMenuButtonEl = buttonContainer.createEl("button", {
-			cls: "gemmy-music-menu-button hidden",
+		// 1. Focus Settings Button (Replaces Music Menu)
+		this.focusSettingsButtonEl = buttonContainer.createEl("button", {
+			cls: "gemmy-focus-settings-button hidden",
 		});
-		setIcon(this.musicMenuButtonEl, "list-music");
-		this.musicMenuButtonEl.setAttribute("data-tooltip", "Select Music");
-		this.musicMenuButtonEl.onclick = () => {
-			new MusicSelectionModal(this.app, this.dataManager, (videoId) => {
+		setIcon(this.focusSettingsButtonEl, "settings");
+		this.focusSettingsButtonEl.setAttribute("data-tooltip", "Focus Settings & Music");
+		this.focusSettingsButtonEl.onclick = () => {
+			new FocusSettingsModal(this.app, this.dataManager, (videoId) => {
 				this.currentMusicId = videoId;
 				this.playFocusMusic(videoId);
 				this.isPlayingMusic = true;
@@ -180,7 +180,7 @@ bubbleTimeout: number;
 
 			// Show Focus Buttons
 			this.focusVolumeSliderEl.removeClass("hidden");
-			this.musicMenuButtonEl.removeClass("hidden");
+			this.focusSettingsButtonEl.removeClass("hidden");
 			this.playPauseButtonEl.removeClass("hidden");
 
 			// Init Timer State
@@ -207,7 +207,7 @@ bubbleTimeout: number;
 
 			// Hide Focus Buttons
 			this.focusVolumeSliderEl.addClass("hidden");
-			this.musicMenuButtonEl.addClass("hidden");
+			this.focusSettingsButtonEl.addClass("hidden");
 			this.playPauseButtonEl.addClass("hidden");
 
 			// Show Normal Buttons
@@ -232,18 +232,30 @@ bubbleTimeout: number;
 		container.style.fontWeight = "bold";
 
 		if (!this.isTimerRunning) {
-			// SETUP MODE: [Input] [Start]
+			// SETUP MODE: [Input Mins] [Start]
 			const input = container.createEl("input", { type: "number" });
-			input.value = Math.floor(this.pomodoroTimeLeft / 60).toString();
+			const currentMins = Math.floor(this.pomodoroTimeLeft / 60);
+			input.value = currentMins.toString();
 			input.style.width = "50px";
 			input.style.textAlign = "center";
 			input.style.background = "transparent";
 			input.style.border = "none";
 			input.style.borderBottom = "1px solid var(--text-muted)";
+			input.placeholder = "25";
+
+			// Auto-save edited time to state immediately
+			input.onchange = () => {
+				const mins = parseInt(input.value);
+				if (!isNaN(mins) && mins > 0) {
+					this.pomodoroTimeLeft = mins * 60;
+				}
+			};
 
 			const startBtn = container.createEl("button", { cls: "clickable-icon" });
 			setIcon(startBtn, "play");
+			startBtn.setAttribute("aria-label", "Start Timer");
 			startBtn.onclick = () => {
+				// Re-validate just in case
 				const mins = parseInt(input.value);
 				if (!isNaN(mins) && mins > 0) {
 					this.pomodoroTimeLeft = mins * 60;
@@ -260,6 +272,7 @@ bubbleTimeout: number;
 
 			const stopBtn = container.createEl("button", { cls: "clickable-icon" });
 			setIcon(stopBtn, "square"); // Stop icon
+			stopBtn.setAttribute("aria-label", "Stop Timer");
 			stopBtn.onclick = () => {
 				this.stopPomodoro();
 				this.renderFocusUI(); // Re-render to Setup Mode
@@ -281,7 +294,19 @@ bubbleTimeout: number;
 				new Notice("Gemmy: Session Finished!");
 			} else {
 				// Efficient re-render: just update text if possible, but full render is safe for simple UI
-				this.renderFocusUI();
+				// Actually for running mode, let's just update the span content to avoid flicker
+				const container = this.bubbleContentEl.querySelector(".gemmy-focus-ui");
+				if(container) {
+					const span = container.querySelector("span");
+					if(span) {
+						const minutes = Math.floor(this.pomodoroTimeLeft / 60);
+						const seconds = this.pomodoroTimeLeft % 60;
+						const timeStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+						span.innerText = timeStr;
+					} else {
+						this.renderFocusUI(); // Fallback
+					}
+				}
 			}
 		}, 1000);
 	}
@@ -453,7 +478,7 @@ bubbleTimeout: number;
 		if (customPath && customPath.trim() !== "") {
 			const path = customPath.trim();
 			if (path.startsWith("http") || path.startsWith("app://")) return path;
-			let normalizedPath = path.replace(/\/g, "/");
+			let normalizedPath = path.replace(/\\/g, "/");
 			if (!normalizedPath.startsWith("/")) normalizedPath = "/" + normalizedPath;
 			return "app://local" + normalizedPath;
 		}
