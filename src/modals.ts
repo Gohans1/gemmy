@@ -1,4 +1,11 @@
-import { App, Modal, Notice, Setting } from "obsidian";
+import {
+	App,
+	Modal,
+	Notice,
+	Setting,
+	ButtonComponent,
+	setIcon,
+} from "obsidian";
 import { DataManager } from "./DataManager";
 import { UI_TEXT, NOTICES, CSS_CLASSES } from "./constants";
 
@@ -17,6 +24,125 @@ abstract class BaseGemmyModal extends Modal {
 
 	protected setTitle(title: string) {
 		this.contentEl.createEl("h2", { text: title });
+	}
+}
+
+export class MusicSelectionModal extends BaseGemmyModal {
+	dataManager: DataManager;
+	onSelect: (videoId: string) => void;
+
+	constructor(
+		app: App,
+		dataManager: DataManager,
+		onSelect: (videoId: string) => void,
+	) {
+		super(app);
+		this.dataManager = dataManager;
+		this.onSelect = onSelect;
+	}
+
+	onOpen() {
+		super.onOpen();
+		this.setTitle("Select Focus Music");
+		const { contentEl } = this;
+
+		const playlistContainer = contentEl.createDiv("gemmy-modal-playlist");
+		this.renderPlaylist(playlistContainer);
+
+		// --- ADD NEW TRACK SECTION ---
+		contentEl.createEl("h3", { text: "Add New Track" });
+		const addDiv = contentEl.createDiv("gemmy-add-track-modal");
+		addDiv.style.display = "flex";
+		addDiv.style.flexDirection = "column";
+		addDiv.style.gap = "10px";
+
+		const nameInput = addDiv.createEl("input", {
+			type: "text",
+			placeholder: "Track Name",
+		});
+		nameInput.style.width = "100%";
+		const urlInput = addDiv.createEl("input", {
+			type: "text",
+			placeholder: "YouTube URL",
+		});
+		urlInput.style.width = "100%";
+
+		const btnDiv = addDiv.createDiv();
+		new ButtonComponent(btnDiv)
+			.setButtonText("Add Track")
+			.setCta()
+			.onClick(async () => {
+				const name = nameInput.value.trim();
+				const url = urlInput.value.trim();
+				if (!name || !url) {
+					new Notice("Enter both name and URL");
+					return;
+				}
+				const id = this.extractYouTubeId(url);
+				if (!id) {
+					new Notice("Invalid YouTube URL");
+					return;
+				}
+				const current = this.dataManager.settings.playlist || [];
+				await this.dataManager.updateSettings({
+					playlist: [...current, { name, url, id }],
+				});
+				new Notice("Track added!");
+				nameInput.value = "";
+				urlInput.value = "";
+				this.renderPlaylist(playlistContainer);
+			});
+	}
+
+	renderingPlaylist(container: HTMLElement) {
+		container.empty();
+		const playlist = this.dataManager.settings.playlist || [];
+
+		if (playlist.length === 0) {
+			container.createEl("p", { text: "No music yet. Add some below!" });
+			return;
+		}
+
+		const list = container.createEl("div");
+		list.style.display = "flex";
+		list.style.flexDirection = "column";
+		list.style.gap = "5px";
+
+		playlist.forEach((track, index) => {
+			const item = list.createDiv("gemmy-music-item");
+			item.style.display = "flex";
+			item.style.justifyContent = "space-between";
+			item.style.alignItems = "center";
+			item.style.padding = "10px";
+			item.style.background = "var(--background-secondary)";
+			item.style.borderRadius = "5px";
+			item.style.cursor = "pointer";
+
+			const nameSpan = item.createSpan({ text: track.name });
+			nameSpan.style.fontWeight = "bold";
+			nameSpan.onclick = () => {
+				this.onSelect(track.id);
+				this.close();
+			};
+
+			const delBtn = item.createEl("button", { cls: "clickable-icon" });
+			setIcon(delBtn, "trash");
+			delBtn.onclick = async (e) => {
+				e.stopPropagation();
+				const newPlaylist = playlist.filter((_, i) => i !== index);
+				await this.dataManager.updateSettings({
+					playlist: newPlaylist,
+				});
+				this.renderPlaylist(container);
+			};
+		});
+	}
+
+	extractYouTubeId(url: string): string | null {
+		const regExp =
+			/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+		const match = url.match(regExp);
+		return match && match[2].length === 11 ? match[2] : null;
 	}
 }
 
@@ -77,7 +203,7 @@ export class ViewFavoritesModal extends BaseGemmyModal {
 }
 
 export class AddUserQuoteModal extends BaseGemmyModal {
-	onSubmit: (quote: string) => void;
+	submit: (quote: string) => void;
 	constructor(app: App, onSubmit: (quote: string) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
@@ -110,7 +236,7 @@ export class AddUserQuoteModal extends BaseGemmyModal {
 }
 
 export class AddQuoteModal extends BaseGemmyModal {
-	onSubmit: (quotes: string[]) => void;
+	submit: (quotes: string[]) => void;
 	constructor(app: App, onSubmit: (quotes: string[]) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
