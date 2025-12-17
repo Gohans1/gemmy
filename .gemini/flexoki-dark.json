@@ -1,0 +1,25 @@
+{
+	"name": "Flexoki Dark",
+	"type": "custom",
+	"Background": "#100F0F",
+	"Foreground": "#CECDC3",
+	"LightBlue": "#4385BE",
+	"AccentBlue": "#4385BE",
+	"AccentPurple": "#CE5D97",
+	"AccentCyan": "#3AA99F",
+	"AccentGreen": "#879A39",
+	"AccentYellow": "#D0A215",
+	"AccentRed": "#D14D41",
+	"Comment": "#575653",
+	"Gray": "#878580",
+	"DiffAdded": "#879A39",
+	"DiffRemoved": "#D14D41",
+	"DiffModified": "#D0A215",
+	"text": {
+		"primary": "#CECDC3",
+		"secondary": "#878580",
+		"link": "#4385BE",
+		"accent": "#3AA99F",
+		"response": "#CECDC3"
+	}
+}
