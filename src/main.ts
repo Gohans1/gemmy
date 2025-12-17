@@ -277,14 +277,15 @@ export default class Gemmy extends Plugin {
 			// Determine which track to play
 			let targetId = this.currentMusicId;
 
-			// If no current track selected, or selected track not in playlist anymore
-			if (
-				!targetId ||
-				(playlist.length > 0 &&
-					!playlist.find((p) => p.id === targetId))
-			) {
+			// Check if the current target is still in the playlist
+			const isTargetInPlaylist = playlist.some((p) => p.id === targetId);
+
+			if (!isTargetInPlaylist) {
+				// If not in playlist (or playlist empty), pick the first one if available
 				if (playlist.length > 0) {
-					targetId = playlist[0].id; // Default to first track
+					targetId = playlist[0].id;
+				} else {
+					targetId = null; // No music available
 				}
 			}
 
@@ -295,6 +296,12 @@ export default class Gemmy extends Plugin {
 				this.playFocusMusic(targetId);
 				this.isPlayingMusic = true;
 				setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PAUSE);
+			} else {
+				// Ensure music is stopped if no track is selected
+				this.currentMusicId = null;
+				this.stopFocusMusic();
+				this.isPlayingMusic = false;
+				setIcon(this.playPauseButtonEl, UI_TEXT.ICONS.PLAY);
 			}
 		} else {
 			this.focusButtonEl.innerText = UI_TEXT.ICONS.FOCUS_OFF;
@@ -334,22 +341,47 @@ export default class Gemmy extends Plugin {
 		container.style.fontWeight = "bold";
 
 		if (!this.isTimerRunning) {
-			// SETUP MODE: [Input Mins] [Start]
-			const input = container.createEl("input", { type: "number" });
-			const currentMins = Math.floor(this.pomodoroTimeLeft / 60);
-			input.value = currentMins.toString();
-			input.style.width = "50px";
+			// SETUP MODE: [Input MM:SS] [Start]
+			const input = container.createEl("input", { type: "text" });
+			const minutes = Math.floor(this.pomodoroTimeLeft / 60);
+			const seconds = this.pomodoroTimeLeft % 60;
+			// Format as mm:ss
+			input.value = `${minutes.toString().padStart(2, "0")}:${seconds
+				.toString()
+				.padStart(2, "0")}`;
+
+			input.style.width = "60px";
 			input.style.textAlign = "center";
 			input.style.background = "transparent";
 			input.style.border = "none";
 			input.style.borderBottom = "1px solid var(--text-muted)";
-			input.placeholder = "25";
+			input.placeholder = "25:00";
+
+			const parseTime = (val: string): number | null => {
+				const v = val.trim();
+				if (v.includes(":")) {
+					const parts = v.split(":");
+					if (parts.length === 2) {
+						const m = parseInt(parts[0]);
+						const s = parseInt(parts[1]);
+						if (!isNaN(m) && !isNaN(s)) {
+							return m * 60 + s;
+						}
+					}
+				} else {
+					const m = parseInt(v);
+					if (!isNaN(m)) {
+						return m * 60;
+					}
+				}
+				return null;
+			};
 
 			// Auto-save edited time to state immediately
 			input.onchange = () => {
-				const mins = parseInt(input.value);
-				if (!isNaN(mins) && mins > 0) {
-					this.pomodoroTimeLeft = mins * 60;
+				const seconds = parseTime(input.value);
+				if (seconds !== null && seconds > 0) {
+					this.pomodoroTimeLeft = seconds;
 				}
 			};
 
@@ -360,9 +392,9 @@ export default class Gemmy extends Plugin {
 			startBtn.setAttribute("aria-label", "Start Timer");
 			startBtn.onclick = () => {
 				// Re-validate just in case
-				const mins = parseInt(input.value);
-				if (!isNaN(mins) && mins > 0) {
-					this.pomodoroTimeLeft = mins * 60;
+				const seconds = parseTime(input.value);
+				if (seconds !== null && seconds > 0) {
+					this.pomodoroTimeLeft = seconds;
 					this.startPomodoro();
 				}
 			};
@@ -781,7 +813,7 @@ export default class Gemmy extends Plugin {
 		const randomThing =
 			sourceQuotes[Math.floor(Math.random() * sourceQuotes.length)];
 		this.quoteHistory.unshift(randomThing);
-		if (this.quoteHistory.length > 5) this.quoteHistory.pop();
+		if (this.quoteHistory.length > 1000) this.quoteHistory.pop();
 
 		this.bubbleContentEl.empty();
 		this.bubbleContentEl.innerText = randomThing;

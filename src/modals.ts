@@ -48,28 +48,6 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		this.setTitle("Focus Mode Settings");
 		const { contentEl } = this;
 
-		// --- TIMER SETTINGS ---
-		contentEl.createEl("h3", { text: "Timer Settings" });
-		new Setting(contentEl)
-			.setName("Duration (minutes)")
-			.setDesc("Default time when starting a session")
-			.addText((text) =>
-				text
-					.setPlaceholder("25")
-					.setValue(
-						this.dataManager.settings.focusDuration?.toString() ||
-							"25",
-					)
-					.onChange(async (value) => {
-						const num = parseInt(value);
-						if (!isNaN(num) && num > 0) {
-							await this.dataManager.updateSettings({
-								focusDuration: num,
-							});
-						}
-					}),
-			);
-
 		// --- PLAYLIST MANAGER ---
 		contentEl.createEl("h3", { text: "Playlist Manager" });
 		contentEl.createEl("p", {

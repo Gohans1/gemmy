@@ -4,11 +4,12 @@
 - bun (not npm)
 </project_stack>
 
-<coding rules>	
+<coding rules>
+- trước khi làm bất kì điều gì, LUÔN LUÔN SỬ DỤNG openskills beads ĐẦU TIÊN và ngay lập tức với Bash("openskills read beads").
 - LUÔN LUÔN phải dùng hệ thống beads(bd) VÀ beads_viewer(bv) trước rồi mới được phép động tới sửa code hay nội dung
 - CẤM chạy lệnh bash `bun run dev` và `bun run build` trừ khi được cho phép, muốn chạy thì phải hỏi
-- LUÔN LUÔN SỬ DỤNG openskills beads ĐẦU TIÊN và ngay lập tức với Bash("openskills read beads").
-- Chỉ được thực thi 1 task trong beads trong 1 lần trả lời. sau đó user sẽ review task đó bạn làm rồi sẽ ra lệnh tiếp
+- Chỉ được thực thi 1 task trong beads trong 1 lần trả lời. sau đó user sẽ review task mà bạn vừa làm rồi sẽ ra lệnh tiếp
+- BẮT BUỘC BẤT KÌ task nào được tạo ra trong beads cũng phải có và điền thật CHI TIẾT nội dung vào trong các fields như description, notes, acceptance-criteria, design. Nếu không biết điền gì thì hỏi user, LÀM TẤT CẢ MỌI CÁCH để điền vào TẤT CẢ các fields đó một cách chi tiết đến mức ám ảnh, nghiêm trọng, kĩ tính, bằng cả mạng sống
 </coding rules>
 
 # Openskills
@@ -197,7 +198,7 @@ bv is a fast terminal UI for Beads projects (.beads/beads.jsonl). It renders lis
 - bv --robot-help — shows all AI-facing commands.
 - bv --robot-insights — JSON graph metrics (PageRank, betweenness, HITS, critical path, cycles) with top-N summaries for quick triage.
 - bv --robot-plan — JSON execution plan: parallel tracks, items per track, and unblocks lists showing what each item frees up.
-- bv --robot-priority — JSON priority recommendations with reasoning and confidence.
+- bv --robot-priority — JSON priority recommendations with reasoning and confidence.	
 - bv --robot-recipes — list recipes (default, actionable, blocked, etc.); apply via bv --recipe <name> to pre-filter/sort before other flags.
 - bv --robot-diff --diff-since <commit|date> — JSON diff of issue changes, new/closed items, and cycles introduced/resolved.
 
