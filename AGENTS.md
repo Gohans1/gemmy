@@ -5,11 +5,12 @@
 </project_stack>
 
 <coding rules>
+- CÚ PHÁP CHẠY BASH SAI là khi bắt đầu bằng "{"command...", đừng chạy bash kiểu này vì nó sai cú pháp
 - trước khi làm bất kì điều gì, LUÔN LUÔN SỬ DỤNG openskills beads ĐẦU TIÊN và ngay lập tức với Bash("openskills read beads").
 - LUÔN LUÔN phải dùng hệ thống beads(bd) VÀ beads_viewer(bv) trước rồi mới được phép động tới sửa code hay nội dung
 - CẤM chạy lệnh bash `bun run dev` và `bun run build` trừ khi được cho phép, muốn chạy thì phải hỏi
-- Chỉ được thực thi 1 task trong beads trong 1 lần trả lời. sau đó user sẽ review task mà bạn vừa làm rồi sẽ ra lệnh tiếp
-- BẮT BUỘC BẤT KÌ task nào được tạo ra trong beads cũng phải có và điền thật CHI TIẾT nội dung vào trong các fields như description, notes, acceptance-criteria, design. Nếu không biết điền gì thì hỏi user, LÀM TẤT CẢ MỌI CÁCH để điền vào TẤT CẢ các fields đó một cách chi tiết đến mức ám ảnh, nghiêm trọng, kĩ tính, bằng cả mạng sống
+- Chỉ được thực thi 1 task trong beads trong 1 lần trả lời. Sau khi hoàn thành task, hãy hướng dẫn cho user chi tiết cách kiểm tra các tính năng mà bạn vừa hoàn thành ở sản phẩm luôn (giả sử như user là người dùng app, không biết gì về code). sau đó user sẽ review task mà bạn vừa làm rồi sẽ ra lệnh tiếp
+- BẮT BUỘC BẤT KÌ task nào được tạo ra trong beads cũng phải có và điền thật CHI TIẾT nội dung vào trong các fields như description, notes, acceptance-criteria, design. Nếu không biết điền gì thì hỏi user, LÀM TẤT CẢ MỌI CÁCH để điền vào TẤT CẢ các fields đó một cách chi tiết đến mức ám ảnh, nghiêm trọng, kĩ tính, bằng cả mạng sống. Hãy điền như thể con AI ngu nhất (gpt2) đọc cũng có thể hiểu toàn bộ bức tranh toàn cảnh của task đó.
 </coding rules>
 
 # Openskills
@@ -38,6 +39,12 @@ Usage notes:
 <skill>
 <name>beads</name>
 <description>Track complex, multi-session work with dependency graphs using beads issue tracker. Use when work spans multiple sessions, has complex dependencies, or requires persistent context across compaction cycles. For simple single-session linear tasks, TodoWrite remains appropriate.</description>
+<location>project</location>
+</skill>
+
+<skill>
+<name>geminicli_settings_docs</name>
+<description>sử dụng khi user cần thay đổi file settings.json của gemini cli</description>
 <location>project</location>
 </skill>
 

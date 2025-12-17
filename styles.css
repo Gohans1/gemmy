@@ -274,3 +274,85 @@ If your plugin does not need CSS, delete this file.
 		transform: translateX(-50%) scale(1);
 	}
 }
+
+/* Refactored Styles */
+.gemmy-focus-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.gemmy-music-selector {
+    flex: 1;
+}
+
+.gemmy-focus-ui-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.gemmy-timer-input {
+    width: 60px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--text-muted);
+}
+
+.gemmy-hidden-iframe {
+    width: 1px;
+    height: 1px;
+    opacity: 0.01;
+    position: absolute;
+    top: -9999px;
+    pointer-events: none;
+}
+
+/* Modals Refactor */
+.gemmy-playlist-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.gemmy-playlist-add-row {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.gemmy-flex-1 { flex: 1; }
+.gemmy-flex-2 { flex: 2; }
+
+.gemmy-playlist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin-bottom: 4px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+}
+
+.gemmy-cursor-pointer { cursor: pointer; }
+
+.gemmy-playlist-item-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.gemmy-margin-bottom-20 { margin-bottom: 20px; }
+
+.gemmy-modal-button-container {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+

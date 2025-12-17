@@ -19,24 +19,11 @@ export class GemmySettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h2", { text: "Gemmy Settings" });
 		containerEl.createEl("p", {
-			text: "Focus Mode settings (Playlist & Timer) are now located in the Gemmy Focus Menu.",
+			text: "All settings have been moved to the Gemmy UI.",
 		});
-
-		// --- IDLE SETTINGS ---
-		new Setting(containerEl)
-			.setName(UI_TEXT.LABELS.IDLE_FREQUENCY_NAME)
-			.setDesc(UI_TEXT.LABELS.IDLE_FREQUENCY_DESC)
-			.addSlider((slider) =>
-				slider
-					.setLimits(5, 300, 5)
-					.setValue(this.dataManager.settings.idleTalkFrequency)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						await this.dataManager.updateSettings({
-							idleTalkFrequency: value,
-						});
-						this.plugin.resetIdleInterval();
-					}),
-			);
+		containerEl.createEl("p", {
+			text: "Click the Settings (gear) icon on Gemmy's bubble to configure.",
+			cls: "setting-item-description",
+		});
 	}
 }

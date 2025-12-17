@@ -1,5 +1,22 @@
 {
 	"context": {
-		"fileName": ["AGENTS.md", "GEMINI.md", "this_project.md"]
+		"fileName": [
+			"AGENTS.md",
+			"GEMINI.md",
+			"this_project.md"
+		]
+	},
+	"ui": {
+		"theme": "C:\\Users\\ADMIN\\Desktop\\gemmy\\gemmy\\.gemini\\flexoki-dark.json"
+	},
+	"tools": {
+		"allowed": [
+			"run_shell_command(bd)",
+			"run_shell_command(bv)",
+			"run_shell_command(openskills)"
+		]
+	},
+	"model": {
+		"name": "gemini-3-pro-preview"
 	}
 }

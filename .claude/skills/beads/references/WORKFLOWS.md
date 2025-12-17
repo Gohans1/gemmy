@@ -31,7 +31,7 @@ Detailed step-by-step workflows for common bd usage patterns with checklists.
 
 ```
 Session Start (when bd is available):
-- [ ] Run bv --robot-insights --json
+- [ ] Run bv --robot-insights
 - [ ] Run bd ready --json
 - [ ] Report: "X items ready to work on: [summary]"
 - [ ] If using global ~/.beads, note this in report

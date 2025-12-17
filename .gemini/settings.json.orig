@@ -1,1 +1,61 @@
-{ "contextFileName": "AGENTS.md" }
+{
+	"context": {
+		"fileName": [
+			"AGENTS.md",
+			"GEMINI.md",
+			"this_project.md"
+		]
+	},
+	"customThemes": {
+		"Flexoki Dark": {
+			"name": "Flexoki Dark",
+			"type": "custom",
+			"Background": "#100F0F",
+			"Foreground": "#CECDC3",
+			"LightBlue": "#4385BE",
+			"AccentBlue": "#4385BE",
+			"AccentPurple": "#CE5D97",
+			"AccentCyan": "#3AA99F",
+			"AccentGreen": "#879A39",
+			"AccentYellow": "#D0A215",
+			"AccentRed": "#D14D41",
+			"Comment": "#575653",
+			"Gray": "#878580",
+			"DiffAdded": "#879A39",
+			"DiffRemoved": "#D14D41",
+			"DiffModified": "#D0A215",
+			"text": {
+				"primary": "#CECDC3",
+				"secondary": "#878580",
+				"link": "#4385BE",
+				"accent": "#3AA99F",
+				"response": "#CECDC3"
+			}
+		},
+		"Flexoki Light": {
+			"name": "Flexoki Light",
+			"type": "custom",
+			"Background": "#FFFCF0",
+			"Foreground": "#100F0F",
+			"LightBlue": "#205EA6",
+			"AccentBlue": "#205EA6",
+			"AccentPurple": "#A02F6F",
+			"AccentCyan": "#24837B",
+			"AccentGreen": "#66800B",
+			"AccentYellow": "#AD8301",
+			"AccentRed": "#AF3029",
+			"Comment": "#B7B5AC",
+			"Gray": "#6F6E69",
+			"DiffAdded": "#66800B",
+			"DiffRemoved": "#AF3029",
+			"DiffModified": "#AD8301",
+			"text": {
+				"primary": "#100F0F",
+				"secondary": "#6F6E69",
+				"link": "#205EA6",
+				"accent": "#24837B",
+				"response": "#100F0F"
+			}
+		}
+	}
+}

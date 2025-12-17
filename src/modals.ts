@@ -48,43 +48,40 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		this.setTitle("Focus Mode Settings");
 		const { contentEl } = this;
 
-		// --- PLAYLIST MANAGER ---
-		contentEl.createEl("h3", { text: "Playlist Manager" });
+		// --- LIBRARY MANAGER ---
+		contentEl.createEl("h3", { text: "Library Manager" });
 		contentEl.createEl("p", {
-			text: "Manage your Focus Mode video playlist.",
+			text: "Manage your Focus Mode tracks.",
 			cls: "setting-item-description",
 		});
 
-		const playlistContainer = contentEl.createDiv("gemmy-modal-playlist");
-		playlistContainer.style.maxHeight = "300px";
-		playlistContainer.style.overflowY = "auto";
-		playlistContainer.style.marginBottom = "20px";
-
-		this.renderPlaylist(playlistContainer);
+		const libraryContainer = contentEl.createDiv(
+			"gemmy-modal-playlist gemmy-playlist-container",
+		);
+		this.renderLibrary(libraryContainer);
 
 		// --- ADD NEW TRACK ---
 		contentEl.createEl("h4", { text: "Add New Track" });
-		const addDiv = contentEl.createDiv("gemmy-add-track-modal");
-		addDiv.style.display = "flex";
-		addDiv.style.gap = "5px";
-		addDiv.style.alignItems = "center";
+		const addTrackDiv = contentEl.createDiv(
+			"gemmy-add-track-modal gemmy-playlist-add-row",
+		);
 
-		const nameInput = new TextComponent(addDiv).setPlaceholder(
+		const trackNameInput = new TextComponent(addTrackDiv).setPlaceholder(
 			"Track Name",
 		);
-		nameInput.inputEl.style.flex = "1";
+		trackNameInput.inputEl.addClass("gemmy-flex-1");
 
-		const urlInput = new TextComponent(addDiv).setPlaceholder(
-			"YouTube URL",
+		const trackUrlInput = new TextComponent(addTrackDiv).setPlaceholder(
+			"YouTube Video URL",
 		);
-		urlInput.inputEl.style.flex = "2";
+		trackUrlInput.inputEl.addClass("gemmy-flex-2");
 
-		new ButtonComponent(addDiv)
-			.setButtonText("Add")
+		new ButtonComponent(addTrackDiv)
+			.setButtonText("Add Track")
 			.setCta()
 			.onClick(async () => {
-				const name = nameInput.getValue().trim();
-				const url = urlInput.getValue().trim();
+				const name = trackNameInput.getValue().trim();
+				const url = trackUrlInput.getValue().trim();
 				if (!name || !url) {
 					new Notice("Enter both name and URL");
 					return;
@@ -92,96 +89,105 @@ export class FocusSettingsModal extends BaseGemmyModal {
 
 				const id = this.extractYouTubeId(url);
 				if (!id) {
-					new Notice("Invalid YouTube URL");
+					new Notice("Invalid YouTube Video URL");
 					return;
 				}
 
-				const current = this.dataManager.settings.playlist || [];
+				const currentTracks =
+					this.dataManager.settings.focusTracks || [];
 				await this.dataManager.updateSettings({
-					playlist: [...current, { name, url, id }],
+					focusTracks: [...currentTracks, { name, url, id }],
 				});
 				new Notice("Track added!");
-				nameInput.setValue("");
-				urlInput.setValue("");
-				this.renderPlaylist(playlistContainer);
+				trackNameInput.setValue("");
+				trackUrlInput.setValue("");
+				this.renderLibrary(libraryContainer);
 			});
 	}
 
-	renderPlaylist(container: HTMLElement) {
+	renderLibrary(container: HTMLElement) {
 		container.empty();
-		const playlist = this.dataManager.settings.playlist || [];
 
-		if (playlist.length === 0) {
-			container.createEl("div", {
-				text: "No music yet.",
-				cls: "setting-item-description",
-			});
-			return;
-		}
-
-		playlist.forEach((track, index) => {
-			const item = container.createDiv("gemmy-music-item");
-			item.style.display = "flex";
-			item.style.justifyContent = "space-between";
-			item.style.alignItems = "center";
-			item.style.padding = "8px";
-			item.style.marginBottom = "4px";
-			item.style.background = "var(--background-secondary)";
-			item.style.borderRadius = "4px";
-
-			// Play Click
-			const info = item.createDiv();
-			info.style.flex = "1";
-			info.style.cursor = "pointer";
-			info.createDiv({ text: track.name, style: "font-weight: bold" });
-			info.createDiv({
-				text: track.url,
-				style: "font-size: 0.8em; color: var(--text-muted)",
-			});
-			info.onclick = () => {
-				this.onSelectMusic(track.id);
-				this.close();
-			};
-
-			// Controls
-			const controls = item.createDiv();
-			controls.style.display = "flex";
-			controls.style.gap = "4px";
-
-			// Move Up
-			if (index > 0) {
-				const upBtn = new ButtonComponent(controls)
-					.setIcon("arrow-up")
-					.setTooltip("Move Up")
-					.onClick(async () => {
-						const newPlaylist = [...playlist];
-						[newPlaylist[index - 1], newPlaylist[index]] = [
-							newPlaylist[index],
-							newPlaylist[index - 1],
-						];
-						await this.dataManager.updateSettings({
-							playlist: newPlaylist,
-						});
-						this.renderPlaylist(container);
-					});
-			}
-
-			// Delete
-			const delBtn = new ButtonComponent(controls)
-				.setIcon("trash")
-				.setTooltip("Delete")
-				.onClick(async () => {
-					const newPlaylist = playlist.filter((_, i) => i !== index);
-					await this.dataManager.updateSettings({
-						playlist: newPlaylist,
-					});
-					this.renderPlaylist(container);
-				});
-			delBtn.buttonEl.addClass("mod-warning");
+		// --- RENDER TRACKS ---
+		container.createEl("h5", {
+			text: "Tracks",
+			cls: "gemmy-library-header",
 		});
+		const tracks = this.dataManager.settings.focusTracks || [];
+
+		if (tracks.length === 0) {
+			container.createEl("div", {
+				text: "No individual tracks yet.",
+				cls: "setting-item-description gemmy-empty-message",
+			});
+		} else {
+			tracks.forEach((track, index) => {
+				const item = container.createDiv(
+					"gemmy-music-item gemmy-playlist-item",
+				);
+
+				// Play Click
+				const info = item.createDiv({
+					cls: "gemmy-flex-1 gemmy-cursor-pointer",
+				});
+				info.createDiv({
+					text: track.name,
+					style: "font-weight: bold",
+				});
+				info.createDiv({
+					text: "Track",
+					style: "font-size: 0.8em; color: var(--text-muted)",
+				});
+				info.onclick = () => {
+					this.onSelectMusic(track.id);
+					this.close();
+				};
+
+				// Controls
+				const controls = item.createDiv({
+					cls: "gemmy-playlist-item-controls",
+				});
+
+				// Move Up
+				if (index > 0) {
+					new ButtonComponent(controls)
+						.setIcon("arrow-up")
+						.setTooltip("Move Up")
+						.onClick(async () => {
+							const newTracks = [...tracks];
+							[newTracks[index - 1], newTracks[index]] = [
+								newTracks[index],
+								newTracks[index - 1],
+							];
+							await this.dataManager.updateSettings({
+								focusTracks: newTracks,
+							});
+							this.renderLibrary(container);
+						});
+				}
+
+				// Delete
+				const delBtn = new ButtonComponent(controls)
+					.setIcon("trash")
+					.setTooltip("Delete")
+					.onClick(async () => {
+						const newTracks = tracks.filter((_, i) => i !== index);
+						await this.dataManager.updateSettings({
+							focusTracks: newTracks,
+						});
+						this.renderLibrary(container);
+					});
+				delBtn.buttonEl.addClass("mod-warning");
+			});
+		}
 	}
 
 	extractYouTubeId(url: string): string | null {
+		url = url.trim();
+		// If it's already a 11-char ID
+		if (url.length === 11 && !url.includes("/") && !url.includes("?")) {
+			return url;
+		}
 		const regExp =
 			/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
 		const match = url.match(regExp);
@@ -520,9 +526,8 @@ export class ChangeAvatarModal extends BaseGemmyModal {
 
 		// Add Browse Button
 		const browseBtnContainer = contentEl.createDiv({
-			cls: "gemmy-browse-btn-container",
+			cls: "gemmy-browse-btn-container gemmy-margin-bottom-20",
 		});
-		browseBtnContainer.style.marginBottom = "20px";
 
 		const fileInput = browseBtnContainer.createEl("input", {
 			type: "file",
@@ -560,10 +565,6 @@ export class ChangeAvatarModal extends BaseGemmyModal {
 		const btnDiv = contentEl.createDiv({
 			cls: "gemmy-modal-button-container",
 		});
-		btnDiv.style.marginTop = "20px";
-		btnDiv.style.display = "flex";
-		btnDiv.style.gap = "10px";
-		btnDiv.style.justifyContent = "flex-end";
 
 		const saveBtn = btnDiv.createEl("button", {
 			text: UI_TEXT.BUTTONS.SAVE,

@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: GemmySettings = {
 	customAvatarPath: "",
 	focusMusicUrl: "",
 	focusDuration: 25,
-	playlist: [],
+	focusTracks: [],
 };
 
 export const CSS_CLASSES = {

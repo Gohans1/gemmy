@@ -21,6 +21,36 @@ export class DataManager {
 		if (!this.settings.playlist) this.settings.playlist = [];
 		this.allQuotes = data?.quotes || [];
 		this.favoriteQuotes = data?.favoriteQuotes || [];
+
+		// MIGRATION LOGIC: Move items from deprecated 'playlist' to 'focusTracks'
+		if (this.settings.playlist && this.settings.playlist.length > 0) {
+			console.log(
+				"Gemmy: Migrating legacy playlist items to focusTracks...",
+			);
+			const legacyTracks = this.settings.playlist;
+
+			// Initialize focusTracks if undefined (though Object.assign should handle it)
+			if (!this.settings.focusTracks) this.settings.focusTracks = [];
+
+			// Merge legacy tracks avoiding duplicates (by ID)
+			for (const track of legacyTracks) {
+				const exists = this.settings.focusTracks.some(
+					(t) => t.id === track.id,
+				);
+				if (!exists) {
+					this.settings.focusTracks.push({
+						id: track.id,
+						name: track.name,
+						url: track.url,
+					});
+				}
+			}
+
+			// Clear legacy playlist to complete migration
+			this.settings.playlist = [];
+			await this.save();
+			console.log("Gemmy: Migration complete.");
+		}
 	}
 
 	async save() {

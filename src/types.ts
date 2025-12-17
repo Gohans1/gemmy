@@ -1,4 +1,4 @@
-export interface PlaylistItem {
+export interface FocusTrack {
 	id: string;
 	name: string;
 	url: string;
@@ -9,7 +9,7 @@ export interface GemmySettings {
 	customAvatarPath?: string;
 	focusMusicUrl?: string; // Legacy, kept for migration if needed
 	focusDuration: number;
-	playlist: PlaylistItem[];
+	focusTracks: FocusTrack[];
 }
 
 export interface GemmyData {
