@@ -20,6 +20,18 @@ If your plugin does not need CSS, delete this file.
 	align-items: flex-start;
 	gap: 8px;
 	cursor: move;
+	animation: gemmy-pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes gemmy-pop-in {
+	0% {
+		transform: scale(0);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
 }
 
 .gemmy-bubble {
@@ -36,8 +48,30 @@ If your plugin does not need CSS, delete this file.
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 	user-select: text;
 	opacity: 1;
-	transition: opacity 0.2s ease-in-out;
+	transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 	pointer-events: all;
+	animation: bubble-appear 0.3s ease-out;
+}
+
+@keyframes bubble-appear {
+	0% {
+		opacity: 0;
+		transform: translateX(-50%) translateY(10px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+}
+
+.gemmy-bubble.fade-out {
+	opacity: 0;
+	transform: translateX(-50%) translateY(10px);
+	pointer-events: none;
+}
+
+.hidden {
+	display: none !important;
 }
 
 .gemmy-bubble-content {

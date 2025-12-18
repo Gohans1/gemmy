@@ -121,12 +121,19 @@ export class QuoteManager {
 		this.updateFavoriteButtonState(randomThing);
 
 		this.plugin.chatBubbleEl.removeClass(CSS_CLASSES.HIDDEN);
+		this.plugin.chatBubbleEl.removeClass("fade-out");
 		this.plugin.imageEl.setAttribute("src", this.plugin.getAvatarSource());
 
 		this.bubbleTimeout = window.setTimeout(() => {
-			this.plugin.chatBubbleEl.addClass(CSS_CLASSES.HIDDEN);
+			this.plugin.chatBubbleEl.addClass("fade-out");
+			window.setTimeout(() => {
+				if (this.plugin.chatBubbleEl.hasClass("fade-out")) {
+					this.plugin.chatBubbleEl.addClass(CSS_CLASSES.HIDDEN);
+				}
+			}, 300);
 		}, CONSTANTS.BUBBLE_DURATION);
 	}
+
 
 	updateFavoriteButtonState(quote: string) {
 		if (this.plugin.dataManager.isFavorite(quote)) {

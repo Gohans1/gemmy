@@ -24,7 +24,7 @@ abstract class BaseGemmyModal extends Modal {
 		this.contentEl.empty();
 	}
 
-	protected setTitle(title: string) {
+	protected setModalTitle(title: string) {
 		this.contentEl.createEl("h2", { text: title });
 	}
 }
@@ -45,7 +45,7 @@ export class FocusSettingsModal extends BaseGemmyModal {
 
 	onOpen() {
 		super.onOpen();
-		this.setTitle("Focus Mode Settings");
+		this.setModalTitle("Focus Mode Settings");
 		const { contentEl } = this;
 
 		// --- LIBRARY MANAGER ---
@@ -130,14 +130,17 @@ export class FocusSettingsModal extends BaseGemmyModal {
 				const info = item.createDiv({
 					cls: "gemmy-flex-1 gemmy-cursor-pointer",
 				});
-				info.createDiv({
+				const nameEl = info.createDiv({
 					text: track.name,
-					style: "font-weight: bold",
 				});
-				info.createDiv({
+				nameEl.style.fontWeight = "bold";
+
+				const typeEl = info.createDiv({
 					text: "Track",
-					style: "font-size: 0.8em; color: var(--text-muted)",
 				});
+				typeEl.style.fontSize = "0.8em";
+				typeEl.style.color = "var(--text-muted)";
+
 				info.onclick = () => {
 					this.onSelectMusic(track.id);
 					this.close();
@@ -205,7 +208,7 @@ export class ViewFavoritesModal extends BaseGemmyModal {
 
 	onOpen() {
 		super.onOpen();
-		this.setTitle(UI_TEXT.TITLES.FAVORITE_QUOTES);
+		this.setModalTitle(UI_TEXT.TITLES.FAVORITE_QUOTES);
 		const { contentEl } = this;
 
 		if (this.dataManager.favoriteQuotes.length === 0) {
@@ -252,14 +255,14 @@ export class ViewFavoritesModal extends BaseGemmyModal {
 }
 
 export class AddUserQuoteModal extends BaseGemmyModal {
-	submit: (quote: string) => void;
+	onSubmit: (quote: string) => void;
 	constructor(app: App, onSubmit: (quote: string) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
 	}
 	onOpen() {
 		super.onOpen();
-		this.setTitle(UI_TEXT.TITLES.ADD_YOUR_QUOTE);
+		this.setModalTitle(UI_TEXT.TITLES.ADD_YOUR_QUOTE);
 		const { contentEl } = this;
 
 		const textarea = contentEl.createEl("textarea", {
@@ -285,14 +288,14 @@ export class AddUserQuoteModal extends BaseGemmyModal {
 }
 
 export class AddQuoteModal extends BaseGemmyModal {
-	submit: (quotes: string[]) => void;
+	onSubmit: (quotes: string[]) => void;
 	constructor(app: App, onSubmit: (quotes: string[]) => void) {
 		super(app);
 		this.onSubmit = onSubmit;
 	}
 	onOpen() {
 		super.onOpen();
-		this.setTitle(UI_TEXT.TITLES.ADD_YOUR_QUOTES);
+		this.setModalTitle(UI_TEXT.TITLES.ADD_YOUR_QUOTES);
 		const { contentEl } = this;
 
 		contentEl.createEl("p", { text: UI_TEXT.LABELS.ENTER_QUOTES_NEW_LINE });
@@ -317,6 +320,8 @@ export class AddQuoteModal extends BaseGemmyModal {
 
 export class ViewAllQuotesModal extends BaseGemmyModal {
 	dataManager: DataManager;
+	listEl: HTMLElement;
+	searchTerm = "";
 
 	constructor(app: App, dataManager: DataManager) {
 		super(app);
@@ -325,7 +330,7 @@ export class ViewAllQuotesModal extends BaseGemmyModal {
 
 	onOpen() {
 		super.onOpen();
-		this.setTitle(UI_TEXT.TITLES.ALL_AVAILABLE_QUOTES);
+		this.setModalTitle(UI_TEXT.TITLES.ALL_AVAILABLE_QUOTES);
 		const { contentEl } = this;
 
 		if (this.dataManager.allQuotes.length === 0) {
@@ -333,9 +338,29 @@ export class ViewAllQuotesModal extends BaseGemmyModal {
 			return;
 		}
 
-		const listEl = contentEl.createEl("ol");
-		for (const quote of this.dataManager.allQuotes) {
-			const listItemEl = listEl.createEl("li");
+		// Search Bar
+		new Setting(contentEl).setName("Search Quotes").addSearch((search) => {
+			search
+				.setPlaceholder("Search...")
+				.setValue(this.searchTerm)
+				.onChange((value) => {
+					this.searchTerm = value.toLowerCase();
+					this.renderList();
+				});
+		});
+
+		this.listEl = contentEl.createEl("ol");
+		this.renderList();
+	}
+
+	renderList() {
+		this.listEl.empty();
+		const filteredQuotes = this.dataManager.allQuotes.filter((q) =>
+			q.toLowerCase().includes(this.searchTerm),
+		);
+
+		for (const quote of filteredQuotes) {
+			const listItemEl = this.listEl.createEl("li");
 			listItemEl.createDiv({
 				text: quote,
 				cls: CSS_CLASSES.HISTORY_QUOTE_TEXT,
@@ -363,8 +388,7 @@ export class ViewAllQuotesModal extends BaseGemmyModal {
 				const success = await this.dataManager.removeQuote(quote);
 				if (success) {
 					new Notice(NOTICES.QUOTE_DELETED);
-					// Re-render the modal content to reflect the change
-					this.onOpen();
+					this.renderList();
 				}
 			};
 		}
@@ -381,7 +405,7 @@ export class ImportModal extends BaseGemmyModal {
 
 	onOpen() {
 		super.onOpen();
-		this.setTitle(UI_TEXT.TITLES.IMPORT_QUOTES);
+		this.setModalTitle(UI_TEXT.TITLES.IMPORT_QUOTES);
 		const { contentEl } = this;
 
 		contentEl.createEl("p", {
@@ -413,11 +437,11 @@ export class ImportModal extends BaseGemmyModal {
 						const data = JSON.parse(content);
 						if (Array.isArray(data)) {
 							parsedQuotes = data.filter(
-								(item) => typeof item === "string",
+								(item: any) => typeof item === "string",
 							);
 						} else if (data && Array.isArray(data.quotes)) {
 							parsedQuotes = data.quotes.filter(
-								(item) => typeof item === "string",
+								(item: any) => typeof item === "string",
 							);
 						} else {
 							throw new Error(
@@ -468,7 +492,7 @@ export class ChangeFrequencyModal extends BaseGemmyModal {
 
 	onOpen() {
 		super.onOpen();
-		this.setTitle(UI_TEXT.TITLES.CHANGE_IDLE_FREQUENCY);
+		this.setModalTitle(UI_TEXT.TITLES.CHANGE_IDLE_FREQUENCY);
 		const { contentEl } = this;
 
 		new Setting(contentEl)
@@ -504,7 +528,7 @@ export class ChangeAvatarModal extends BaseGemmyModal {
 
 	onOpen() {
 		super.onOpen();
-		this.setTitle(UI_TEXT.TITLES.CHANGE_AVATAR);
+		this.setModalTitle(UI_TEXT.TITLES.CHANGE_AVATAR);
 		const { contentEl } = this;
 
 		let currentPath = this.dataManager.settings.customAvatarPath || "";

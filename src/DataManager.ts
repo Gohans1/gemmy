@@ -18,16 +18,17 @@ export class DataManager {
 	async load() {
 		const data: GemmyData = await this.plugin.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings);
-		if (!this.settings.playlist) this.settings.playlist = [];
+		const legacySettings = this.settings as any;
+		if (!legacySettings.playlist) legacySettings.playlist = [];
 		this.allQuotes = data?.quotes || [];
 		this.favoriteQuotes = data?.favoriteQuotes || [];
 
 		// MIGRATION LOGIC: Move items from deprecated 'playlist' to 'focusTracks'
-		if (this.settings.playlist && this.settings.playlist.length > 0) {
+		if (legacySettings.playlist && legacySettings.playlist.length > 0) {
 			console.log(
 				"Gemmy: Migrating legacy playlist items to focusTracks...",
 			);
-			const legacyTracks = this.settings.playlist;
+			const legacyTracks = legacySettings.playlist;
 
 			// Initialize focusTracks if undefined (though Object.assign should handle it)
 			if (!this.settings.focusTracks) this.settings.focusTracks = [];
@@ -47,7 +48,7 @@ export class DataManager {
 			}
 
 			// Clear legacy playlist to complete migration
-			this.settings.playlist = [];
+			legacySettings.playlist = [];
 			await this.save();
 			console.log("Gemmy: Migration complete.");
 		}

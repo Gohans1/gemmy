@@ -10,6 +10,7 @@ export interface GemmySettings {
 	focusMusicUrl?: string; // Legacy, kept for migration if needed
 	focusDuration: number;
 	focusTracks: FocusTrack[];
+	position?: { top: number; left: number };
 }
 
 export interface GemmyData {

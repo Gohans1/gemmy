@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS: GemmySettings = {
 	focusMusicUrl: "",
 	focusDuration: 25,
 	focusTracks: [],
+	position: { top: 100, left: 100 },
 };
 
 export const CSS_CLASSES = {

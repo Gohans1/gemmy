@@ -5,6 +5,7 @@
 </project_stack>
 
 <coding rules>
+- Trước khi sửa nội dung thông tin ở bất kì file nào thì hãy read file đó trước rồi hẵng sửa, vì hệ thống bắt phải vậy
 - CÚ PHÁP CHẠY BASH SAI là khi bắt đầu bằng "{"command...", đừng chạy bash kiểu này vì nó sai cú pháp
 - trước khi làm bất kì điều gì, LUÔN LUÔN SỬ DỤNG openskills beads ĐẦU TIÊN và ngay lập tức với Bash("openskills read beads").
 - LUÔN LUÔN phải dùng hệ thống beads(bd) VÀ beads_viewer(bv) trước rồi mới được phép động tới sửa code hay nội dung

@@ -182,8 +182,8 @@ export class FocusManager {
 		);
 
 		if (this.isFocusMode) {
-			if (this.plugin.bubbleTimeout)
-				clearTimeout(this.plugin.bubbleTimeout);
+			if (this.plugin.quoteManager && this.plugin.quoteManager.bubbleTimeout)
+				clearTimeout(this.plugin.quoteManager.bubbleTimeout);
 			this.focusButtonEl.innerText = UI_TEXT.ICONS.FOCUS_ON;
 			new Notice(NOTICES.FOCUS_MODE_ON);
 			this.plugin.imageEl.style.opacity = "1";

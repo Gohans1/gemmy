@@ -3,7 +3,6 @@ import KAPILGUPTA_STATIC from "./kapilgupta.png";
 import { GemmySettingTab } from "./settings";
 import { DataManager } from "./DataManager";
 import {
-	CONSTANTS,
 	CSS_CLASSES,
 	UI_TEXT,
 	NOTICES,
@@ -247,6 +246,14 @@ export default class Gemmy extends Plugin {
 	appear() {
 		this.imageEl.setAttribute("src", this.getAvatarSource());
 		this.appeared = true;
+
+		// Apply saved position
+		const pos = this.dataManager.settings.position;
+		if (pos) {
+			this.gemmyEl.style.top = pos.top + "px";
+			this.gemmyEl.style.left = pos.left + "px";
+		}
+
 		document.body.appendChild(this.gemmyEl);
 		this.gemmyEl.show();
 		this.quoteManager.saySomething();
@@ -287,9 +294,17 @@ export default class Gemmy extends Plugin {
 			elmnt.style.top = elmnt.offsetTop - pos2 + "px";
 			elmnt.style.left = elmnt.offsetLeft - pos1 + "px";
 		};
-		const closeDragElement = () => {
+		const closeDragElement = async () => {
 			document.onmouseup = null;
 			document.onmousemove = null;
+
+			// Save position
+			await this.dataManager.updateSettings({
+				position: {
+					top: elmnt.offsetTop,
+					left: elmnt.offsetLeft,
+				},
+			});
 		};
 		this.imageEl.onmousedown = dragMouseDown;
 	}
