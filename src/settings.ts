@@ -1,7 +1,6 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab } from "obsidian";
 import type Gemmy from "./main";
 import { DataManager } from "./DataManager";
-import { UI_TEXT } from "./constants";
 
 export class GemmySettingTab extends PluginSettingTab {
 	plugin: Gemmy;

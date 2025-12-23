@@ -23,6 +23,15 @@ If your plugin does not need CSS, delete this file.
 	animation: gemmy-pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.gemmy-bounce {
+	animation: gemmy-bounce 0.4s ease;
+}
+
+@keyframes gemmy-bounce {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.2); }
+}
+
 @keyframes gemmy-pop-in {
 	0% {
 		transform: scale(0);
@@ -86,12 +95,52 @@ If your plugin does not need CSS, delete this file.
 	gap: 4px;
 	opacity: 0;
 	transition: opacity 0.2s ease-in-out;
-	pointer-events: none; /* Prevent accidental clicks when hidden */
+	pointer-events: auto;
 }
 
 .gemmy-bubble:hover .gemmy-button-container {
 	opacity: 1;
-	pointer-events: auto;
+}
+
+/* Instant Tooltip System */
+.clickable-icon[aria-label] {
+	position: relative;
+}
+
+.clickable-icon[aria-label]:hover::after {
+	content: attr(aria-label);
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%) translateY(5px);
+	padding: 4px 8px;
+	background-color: var(--background-secondary-alt);
+	color: var(--text-normal);
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+	z-index: 10000;
+	pointer-events: none;
+	opacity: 1;
+	display: block;
+}
+
+/* Tooltip Arrow */
+.clickable-icon[aria-label]:hover::before {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	border-width: 5px;
+	border-style: solid;
+	border-color: transparent transparent var(--background-modifier-border) transparent;
+	z-index: 10001;
+	pointer-events: none;
+	display: block;
 }
 
 /* Hide all buttons when focus mode is active, EXCEPT the focus button */
@@ -121,16 +170,13 @@ If your plugin does not need CSS, delete this file.
 .gemmy-toggle-mode-button,
 .gemmy-focus-settings-button,
 .gemmy-bubble .clickable-icon {
-	padding: 1px 6px; /* ĐÃ LÀM CHO NÓ "BẸP" ĐI RỒI ĐẤY THẰNG LỒN */
-	font-size: 16px; /* Cho chữ nhỏ lại tí cho nó cân đối */
-	background-color: var(
-		--interactive-normal
-	); /* Restored visible background */
+	padding: 2px 6px;
+	font-size: 16px;
+	background-color: var(--interactive-normal);
 	color: var(--text-muted);
-	border: 1px solid var(--background-modifier-border); /* Restored visible border */
+	border: 1px solid var(--background-modifier-border);
 	border-radius: 4px;
 	cursor: pointer;
-	opacity: 0.7;
 }
 
 .gemmy-button-container .hidden {
@@ -148,11 +194,8 @@ If your plugin does not need CSS, delete this file.
 .gemmy-toggle-mode-button:hover,
 .gemmy-focus-settings-button:hover,
 .gemmy-bubble .clickable-icon:hover {
-	opacity: 1;
-	background-color: var(
-		--background-modifier-hover
-	); /* Apply background on hover */
-	border: 1px solid var(--background-modifier-border); /* Apply border on hover */
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
 }
 
 .gemmy-volume-slider {
@@ -269,44 +312,6 @@ If your plugin does not need CSS, delete this file.
 .history-delete-button:hover {
 	background-color: var(--background-modifier-error);
 	color: var(--text-on-accent);
-}
-
-/* === INSTANT TOOLTIPS (THE GODFATHER'S REQUEST) === */
-.gemmy-button-container button[data-tooltip] {
-	position: relative;
-}
-
-.gemmy-button-container button[data-tooltip]:hover::after {
-	content: attr(data-tooltip);
-	position: absolute;
-	top: 100%; /* Move to below */
-	left: 50%;
-	transform: translateX(-50%);
-	padding: 4px 8px;
-	background-color: var(--background-primary-alt);
-	color: var(--text-normal);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
-	font-size: 11px;
-	white-space: nowrap;
-	z-index: 1000;
-	pointer-events: none;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-	margin-top: 6px; /* Add space between button and tooltip */
-	font-weight: 600;
-	opacity: 1;
-	animation: tooltip-pop 0.1s ease-out forwards;
-}
-
-@keyframes tooltip-pop {
-	0% {
-		opacity: 0;
-		transform: translateX(-50%) scale(0.9);
-	}
-	100% {
-		opacity: 1;
-		transform: translateX(-50%) scale(1);
-	}
 }
 
 /* Refactored Styles */

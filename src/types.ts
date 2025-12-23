@@ -2,6 +2,7 @@ export interface FocusTrack {
 	id: string;
 	name: string;
 	url: string;
+	duration?: number;
 }
 
 export interface GemmySettings {
@@ -11,6 +12,7 @@ export interface GemmySettings {
 	focusDuration: number;
 	focusTracks: FocusTrack[];
 	position?: { top: number; left: number };
+	isRadioMode: boolean;
 }
 
 export interface GemmyData {

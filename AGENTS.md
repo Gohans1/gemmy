@@ -1,213 +1,98 @@
-# PROJECT RULES
+# GEMMY PROJECT - SOURCE OF TRUTH (AGENTS.MD)
 
-<project_stack>
-- bun (not npm)
-</project_stack>
+> **WARNING FOR AI AGENTS:** READ THIS FILE BEFORE TOUCHING ANY CODE.
+> This is the immutable core of the project. Do not refactor these architectural decisions unless explicitly instructed.
 
-<coding rules>
-- Trước khi sửa nội dung thông tin ở bất kì file nào thì hãy read file đó trước rồi hẵng sửa, vì hệ thống bắt phải vậy
-- CÚ PHÁP CHẠY BASH SAI là khi bắt đầu bằng "{"command...", đừng chạy bash kiểu này vì nó sai cú pháp
-- trước khi làm bất kì điều gì, LUÔN LUÔN SỬ DỤNG openskills beads ĐẦU TIÊN và ngay lập tức với Bash("openskills read beads").
-- LUÔN LUÔN phải dùng hệ thống beads(bd) VÀ beads_viewer(bv) trước rồi mới được phép động tới sửa code hay nội dung
-- CẤM chạy lệnh bash `bun run dev` và `bun run build` trừ khi được cho phép, muốn chạy thì phải hỏi
-- Chỉ được thực thi 1 task trong beads trong 1 lần trả lời. Sau khi hoàn thành task, hãy hướng dẫn cho user chi tiết cách kiểm tra các tính năng mà bạn vừa hoàn thành ở sản phẩm luôn (giả sử như user là người dùng app, không biết gì về code). sau đó user sẽ review task mà bạn vừa làm rồi sẽ ra lệnh tiếp
-- BẮT BUỘC BẤT KÌ task nào được tạo ra trong beads cũng phải có và điền thật CHI TIẾT nội dung vào trong các fields như description, notes, acceptance-criteria, design. Nếu không biết điền gì thì hỏi user, LÀM TẤT CẢ MỌI CÁCH để điền vào TẤT CẢ các fields đó một cách chi tiết đến mức ám ảnh, nghiêm trọng, kĩ tính, bằng cả mạng sống. Hãy điền như thể con AI ngu nhất (gpt2) đọc cũng có thể hiểu toàn bộ bức tranh toàn cảnh của task đó.
-</coding rules>
+## 1. IDENTITY & PURPOSE
+- **Project Name:** Gemmy
+- **Type:** Obsidian Plugin (Desktop).
+- **Core Concept:** A persistent, interactive desktop mascot that provides quotes, focus tools (Pomodoro), and companionship.
+- **Vibe:** Friendly, slightly chaotic, persistent. Gemmy is not just a UI element; it's a character.
 
-# Openskills
+## 2. TECH STACK & ARCHITECTURE (NON-NEGOTIABLE)
+- **Language:** TypeScript.
+- **Framework:** Obsidian Plugin API (`obsidian` package).
+- **UI Paradigm:** **DIRECT DOM MANIPULATION**.
+    - ❌ **NO** React, Vue, Svelte, or Virtual DOM.
+    - ✅ **YES** `createEl`, `createDiv`, `HTMLElement` manipulation.
+    - **Reason:** Lightweight, native Obsidian integration, total control over animation states.
+- **Styling:** Raw CSS (`styles.css`).
+    - Use CSS Variables (`var(--background-primary)`) to match Obsidian themes.
+- **Persistence:** `data.json` managed via `DataManager`.
 
-<skills_system priority="1">
+## 3. FILE STRUCTURE & RESPONSIBILITIES (THE ORGANS)
 
-## Available Skills
+### `src/main.ts` (THE BRAIN)
+- **Role:** Entry point (`onload`, `onunload`).
+- **Responsibilities:**
+    - Initializes Managers (`DataManager`, `QuoteManager`, `FocusManager`).
+    - Creates the **Root DOM Elements**: `.gemmy-container`, `img` (Mascot), `.gemmy-bubble` (Chat).
+    - Handles Global Events: Dragging logic, Command registration.
+    - **Crucial:** The `gemmyEl` (container) is appended directly to `document.body` to float above everything.
 
-<!-- SKILLS_TABLE_START -->
-<usage>
-When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively. Skills provide specialized capabilities and domain knowledge.
+### `src/DataManager.ts` (THE MEMORY)
+- **Role:** State management and Persistence.
+- **Responsibilities:**
+    - Loads/Saves `data.json`.
+    - Manages `allQuotes` (Array<string>) and `favoriteQuotes` (Array<string>).
+    - Manages `settings` (Avatar path, Focus tracks, Idle frequency).
+    - **Rule:** NEVER write to file directly. Always use `this.dataManager.save()`.
 
-How to use skills:
-- Invoke: Bash("openskills read <skill-name>")
-- The skill content will load with detailed instructions on how to complete the task
-- Base directory provided in output for resolving bundled resources (references/, scripts/, assets/)
+### `src/modes/QuoteManager.ts` (THE VOICE)
+- **Role:** Controls what Gemmy says.
+- **Responsibilities:**
+    - `saySomething()`: The core loop. Picks a random quote.
+    - `renderQuote()`: Updates the Bubble UI.
+    - **Navigation:** Manages `quoteHistory` stack (Prev/Next logic).
+    - **Logic Change (2025):** Quotes **DO NOT** auto-hide. They persist until the next interaction.
 
-Usage notes:
-- Only use skills listed in <available_skills> below
-- Do not invoke a skill that is already loaded in your context
-- Each skill invocation is stateless
-</usage>
+### `src/modes/FocusManager.ts` (THE COACH)
+- **Role:** Focus/Pomodoro Mode logic.
+- **Responsibilities:**
+    - Toggles "Focus Mode" state.
+    - Hides distraction buttons (Next, Prev, Menu).
+    - Plays background music (YouTube/Audio).
+    - Renders the Focus UI (Timer, Controls).
 
-<available_skills>
+### `src/modals.ts` (THE INTERFACE)
+- **Role:** Pop-up windows for user interaction.
+- **Components:**
+    - `ViewAllQuotesModal`: List, Search, Delete, **Favorite**, Copy.
+    - `ImportModal`: JSON/CSV parsing.
+    - `FocusSettingsModal`: Playlist management.
 
-<skill>
-<name>beads</name>
-<description>Track complex, multi-session work with dependency graphs using beads issue tracker. Use when work spans multiple sessions, has complex dependencies, or requires persistent context across compaction cycles. For simple single-session linear tasks, TodoWrite remains appropriate.</description>
-<location>project</location>
-</skill>
+## 4. CRITICAL INVARIANTS (THE LAWS OF PHYSICS)
 
-<skill>
-<name>geminicli_settings_docs</name>
-<description>sử dụng khi user cần thay đổi file settings.json của gemini cli</description>
-<location>project</location>
-</skill>
+1.  **The Bubble Logic:**
+    - The Bubble (`.gemmy-bubble`) is controlled via CSS classes: `.hidden` and `.fade-out`.
+    - To Show: `removeClass("hidden")`.
+    - To Hide: `addClass("hidden")`.
+    - **Never** destroy/recreate the bubble DOM; only toggle visibility.
 
-</available_skills>
-<!-- SKILLS_TABLE_END -->
+2.  **Asset Handling:**
+    - Default Avatar: Imported statically (`kapilgupta.png`).
+    - Custom Avatar: Stored as a path string in Settings. Handled by `getAvatarSource()`.
 
-</skills_system>
+3.  **Quote Data Structure:**
+    - A Quote is a simple `string`.
+    - No ID, no complex object.
+    - Deduplication happens via string comparison.
 
-<!-- bd onboard section -->
+4.  **Drag System:**
+    - Uses native `mousedown`, `mousemove`, `mouseup` on `document`.
+    - Coordinates are saved to `settings.position` on `mouseup`.
 
-# Beads_System
-## Issue Tracking with bd (beads)
+## 5. COMMON PATTERNS FOR AGENTS
+- **Adding a Button:**
+    - Go to `src/main.ts` -> `onload` -> `buttonContainer`.
+    - Use `createDiv` with `clickable-icon`.
+    - Add `onclick` handler.
+- **Adding a Modal:**
+    - Create class in `src/modals.ts` extending `BaseGemmyModal`.
+    - Instantiate in `src/main.ts` or inside `Menu`.
+- **Modifying Data:**
+    - Add method to `DataManager`.
+    - Call `await this.save()`.
 
-**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
-
-### Why bd?
-
-- Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Auto-syncs to JSONL for version control
-- Agent-optimized: JSON output, ready work detection, discovered-from links
-- Prevents duplicate tracking systems and confusion
-
-### Quick Start
-
-**FIRST TIME?** Just run `bd init` - it auto-imports issues from git:
-
-```bash
-bd init --prefix bd
-```
-
-**OSS Contributor?** Use the contributor wizard for fork workflows:
-
-```bash
-bd init --contributor  # Interactive setup for separate planning repo
-```
-
-**Team Member?** Use the team wizard for branch workflows:
-
-```bash
-bd init --team  # Interactive setup for team collaboration
-```
-
-**Check for ready work:**
-
-```bash
-bv --robot-insights
-bd ready --json
-```
-
-**Create new issues:**
-
-```bash
-bd create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
-bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:bd-123 --json
-```
-
-**Claim and update:**
-
-```bash
-bd update bd-42 --status in_progress --json
-bd update bd-42 --priority 1 --json
-```
-
-**Complete work:**
-
-```bash
-bd close bd-42 --reason "Completed" --json
-```
-
-### Issue Types
-
-- `bug` - Something broken
-- `feature` - New functionality
-- `task` - Work item (tests, docs, refactoring)
-- `epic` - Large feature with subtasks
-- `chore` - Maintenance (dependencies, tooling)
-
-### Priorities
-
-- `0` - Critical (security, data loss, broken builds)
-- `1` - High (major features, important bugs)
-- `2` - Medium (default, nice-to-have)
-- `3` - Low (polish, optimization)
-- `4` - Backlog (future ideas)
-
-### Workflow for AI Agents
-
-1. **Check ready work**: `bv --robot-insights`, `bd ready` shows unblocked issues
-2. **Claim your task**: `bd update <id> --status in_progress`
-3. **Work on it**: Implement, test, document
-4. **Discover new work?** Create linked issue:
-   - `bd create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
-5. **Complete**: `bd close <id> --reason "Done"`
-
-### Auto-Sync
-
-bd automatically syncs with git:
-
-- Exports to `.beads/issues.jsonl` after changes (5s debounce)
-- Imports from JSONL when newer (e.g., after `git pull`)
-- No manual export/import needed!
-
-### Managing AI-Generated Planning Documents
-
-AI assistants often create planning and design documents during development:
-
-- PLAN.md, IMPLEMENTATION.md, ARCHITECTURE.md
-- DESIGN.md, CODEBASE_SUMMARY.md, INTEGRATION_PLAN.md
-- TESTING_GUIDE.md, TECHNICAL_DESIGN.md, and similar files
-
-**Best Practice: Use a dedicated directory for these ephemeral files**
-
-**Recommended approach:**
-
-- Create a `history/` directory in the project root
-- Store ALL AI-generated planning/design docs in `history/`
-- Keep the repository root clean and focused on permanent project files
-- Only access `history/` when explicitly asked to review past planning
-
-**Example .gitignore entry (optional):**
-
-```
-# AI planning documents (ephemeral)
-history/
-```
-
-**Benefits:**
-
-- ✅ Clean repository root
-- ✅ Clear separation between ephemeral and permanent documentation
-- ✅ Easy to exclude from version control if desired
-- ✅ Preserves planning history for archaeological research
-- ✅ Reduces noise when browsing the project
-
-### Important Rules
-
-- ✅ Use bd for ALL task tracking
-- ✅ Always use `--json` flag for programmatic use
-- ✅ Link discovered work with `discovered-from` dependencies
-- ✅ Check `bv --robot-insights`,`bd ready` before asking "what should I work on?"
-- ✅ Store AI planning docs in `history/` directory
-- ❌ Do NOT create markdown TODO lists
-- ❌ Do NOT use external issue trackers
-- ❌ Do NOT duplicate tracking systems
-- ❌ Do NOT clutter repo root with planning documents
-
-For more details, see README.md and QUICKSTART.md.
-
-<!-- /bd onboard section -->
-
-# Beads_viewer_system
-### Using bv as an AI sidecar
-
-bv is a fast terminal UI for Beads projects (.beads/beads.jsonl). It renders lists/details and precomputes dependency metrics (PageRank, critical path, cycles, etc.) so you instantly see blockers and execution order. For agents, it’s a graph sidecar: instead of parsing JSONL or risking hallucinated traversal, call the robot flags to get deterministic, dependency-aware outputs.
-
-*IMPORTANT: As an agent, you must ONLY use bv with the robot flags, otherwise you'll get stuck in the interactive TUI that's intended for human usage only!*
-
-- bv --robot-help — shows all AI-facing commands.
-- bv --robot-insights — JSON graph metrics (PageRank, betweenness, HITS, critical path, cycles) with top-N summaries for quick triage.
-- bv --robot-plan — JSON execution plan: parallel tracks, items per track, and unblocks lists showing what each item frees up.
-- bv --robot-priority — JSON priority recommendations with reasoning and confidence.	
-- bv --robot-recipes — list recipes (default, actionable, blocked, etc.); apply via bv --recipe <name> to pre-filter/sort before other flags.
-- bv --robot-diff --diff-since <commit|date> — JSON diff of issue changes, new/closed items, and cycles introduced/resolved.
-
-Use these commands instead of hand-rolling graph logic; bv already computes the hard parts so agents can act safely and quickly.
+---
+*Last Updated: Dec 2025 (The "No-Auto-Hide" Era)*

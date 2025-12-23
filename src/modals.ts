@@ -5,7 +5,6 @@ import {
 	Setting,
 	ButtonComponent,
 	TextComponent,
-	setIcon,
 } from "obsidian";
 import { DataManager } from "./DataManager";
 import { UI_TEXT, NOTICES, CSS_CLASSES } from "./constants";
@@ -48,6 +47,20 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		this.setModalTitle("Focus Mode Settings");
 		const { contentEl } = this;
 
+		// --- RADIO MODE TOGGLE ---
+		new Setting(contentEl)
+			.setName("Radio Mode (10s segments)")
+			.setDesc("Play a random 10-second segment from each track.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.dataManager.settings.isRadioMode)
+					.onChange(async (value) => {
+						await this.dataManager.updateSettings({
+							isRadioMode: value,
+						});
+					}),
+			);
+
 		// --- LIBRARY MANAGER ---
 		contentEl.createEl("h3", { text: "Library Manager" });
 		contentEl.createEl("p", {
@@ -63,7 +76,7 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		// --- ADD NEW TRACK ---
 		contentEl.createEl("h4", { text: "Add New Track" });
 		const addTrackDiv = contentEl.createDiv(
-			"gemmy-add-track-modal gemmy-playlist-add-row",
+			"gemmy-playlist-add-row",
 		);
 
 		const trackNameInput = new TextComponent(addTrackDiv).setPlaceholder(
@@ -123,7 +136,7 @@ export class FocusSettingsModal extends BaseGemmyModal {
 		} else {
 			tracks.forEach((track, index) => {
 				const item = container.createDiv(
-					"gemmy-music-item gemmy-playlist-item",
+					"gemmy-playlist-item",
 				);
 
 				// Play Click
@@ -135,8 +148,9 @@ export class FocusSettingsModal extends BaseGemmyModal {
 				});
 				nameEl.style.fontWeight = "bold";
 
+				const durationText = track.duration ? ` (${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, "0")})` : "";
 				const typeEl = info.createDiv({
-					text: "Track",
+					text: `Track${durationText}`,
 				});
 				typeEl.style.fontSize = "0.8em";
 				typeEl.style.color = "var(--text-muted)";
@@ -153,9 +167,8 @@ export class FocusSettingsModal extends BaseGemmyModal {
 
 				// Move Up
 				if (index > 0) {
-					new ButtonComponent(controls)
+					const moveUpBtn = new ButtonComponent(controls)
 						.setIcon("arrow-up")
-						.setTooltip("Move Up")
 						.onClick(async () => {
 							const newTracks = [...tracks];
 							[newTracks[index - 1], newTracks[index]] = [
@@ -167,12 +180,13 @@ export class FocusSettingsModal extends BaseGemmyModal {
 							});
 							this.renderLibrary(container);
 						});
+					moveUpBtn.buttonEl.setAttribute("aria-label", "Move Up");
+					moveUpBtn.buttonEl.addClass("clickable-icon");
 				}
 
 				// Delete
 				const delBtn = new ButtonComponent(controls)
 					.setIcon("trash")
-					.setTooltip("Delete")
 					.onClick(async () => {
 						const newTracks = tracks.filter((_, i) => i !== index);
 						await this.dataManager.updateSettings({
@@ -180,6 +194,8 @@ export class FocusSettingsModal extends BaseGemmyModal {
 						});
 						this.renderLibrary(container);
 					});
+				delBtn.buttonEl.setAttribute("aria-label", "Delete");
+				delBtn.buttonEl.addClass("clickable-icon");
 				delBtn.buttonEl.addClass("mod-warning");
 			});
 		}
@@ -187,7 +203,6 @@ export class FocusSettingsModal extends BaseGemmyModal {
 
 	extractYouTubeId(url: string): string | null {
 		url = url.trim();
-		// If it's already a 11-char ID
 		if (url.length === 11 && !url.includes("/") && !url.includes("?")) {
 			return url;
 		}
@@ -370,6 +385,30 @@ export class ViewAllQuotesModal extends BaseGemmyModal {
 				cls: CSS_CLASSES.HISTORY_BUTTON_GROUP,
 			});
 
+			const isFav = this.dataManager.isFavorite(quote);
+			const favBtn = buttonGroup.createEl("button", {
+				text: isFav
+					? UI_TEXT.ICONS.HEART_FILLED
+					: UI_TEXT.ICONS.HEART_EMPTY,
+				cls: CSS_CLASSES.HISTORY_COPY_BUTTON,
+			});
+			favBtn.setAttribute(
+				"aria-label",
+				isFav ? "Remove from Favorites" : "Add to Favorites",
+			);
+			favBtn.onclick = async () => {
+				const added = await this.dataManager.toggleFavorite(quote);
+				if (added) {
+					favBtn.innerText = UI_TEXT.ICONS.HEART_FILLED;
+					favBtn.setAttribute("aria-label", "Remove from Favorites");
+					new Notice(NOTICES.ADDED_TO_FAVORITES);
+				} else {
+					favBtn.innerText = UI_TEXT.ICONS.HEART_EMPTY;
+					favBtn.setAttribute("aria-label", "Add to Favorites");
+					new Notice(NOTICES.REMOVED_FROM_FAVORITES);
+				}
+			};
+
 			const copyBtn = buttonGroup.createEl("button", {
 				text: UI_TEXT.BUTTONS.COPY,
 				cls: CSS_CLASSES.HISTORY_COPY_BUTTON,
@@ -449,7 +488,6 @@ export class ImportModal extends BaseGemmyModal {
 							);
 						}
 					} else if (file.name.endsWith(".csv")) {
-						// Simple CSV parsing: one quote per line
 						parsedQuotes = content
 							.split("\n")
 							.map((line) => line.trim())
@@ -509,7 +547,7 @@ export class ChangeFrequencyModal extends BaseGemmyModal {
 							await this.dataManager.updateSettings({
 								idleTalkFrequency: numValue,
 							});
-							this.onSave(); // Notify main to reset interval
+							this.onSave();
 						}
 					}),
 			);
@@ -548,7 +586,6 @@ export class ChangeAvatarModal extends BaseGemmyModal {
 				});
 		});
 
-		// Add Browse Button
 		const browseBtnContainer = contentEl.createDiv({
 			cls: "gemmy-browse-btn-container gemmy-margin-bottom-20",
 		});
@@ -566,7 +603,6 @@ export class ChangeAvatarModal extends BaseGemmyModal {
 			if (file) {
 				try {
 					new Notice("Processing image...");
-					// Save the file to plugin directory and get the resource path
 					const resourcePath =
 						await this.dataManager.saveAvatar(file);
 

@@ -4,6 +4,7 @@ export const CONSTANTS = {
 	BUBBLE_DURATION: 5000,
 	DEFAULT_IDLE_FREQUENCY: 5,
 	POMODORO_DURATION: 1500,
+	RADIO_DURATION: 10,
 };
 
 export const DEFAULT_SETTINGS: GemmySettings = {
@@ -13,6 +14,7 @@ export const DEFAULT_SETTINGS: GemmySettings = {
 	focusDuration: 25,
 	focusTracks: [],
 	position: { top: 100, left: 100 },
+	isRadioMode: true,
 };
 
 export const CSS_CLASSES = {
@@ -145,4 +147,5 @@ export const COMMANDS = {
 	},
 	IMPORT_QUOTES: { id: "import-quotes", name: "Import quotes from file" },
 	TOGGLE_FOCUS_MODE: { id: "toggle-focus-mode", name: "Toggle Focus Mode" },
+	TOGGLE_GEMMY: { id: "toggle", name: "Toggle Gemmy" },
 };

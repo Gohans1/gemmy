@@ -62,35 +62,35 @@ export default class Gemmy extends Plugin {
 		this.focusManager.initFocusControls(this.chatBubbleEl, buttonContainer);
 
 		// 3. Normal Mode Buttons
-		this.toggleModeButtonEl = buttonContainer.createEl("button", {
-			cls: CSS_CLASSES.TOGGLE_MODE_BUTTON,
+		this.toggleModeButtonEl = buttonContainer.createDiv({
+			cls: [CSS_CLASSES.TOGGLE_MODE_BUTTON, "clickable-icon"],
 			text: UI_TEXT.ICONS.NORMAL_MODE,
 		});
-		this.toggleModeButtonEl.setAttribute(
-			"data-tooltip",
-			UI_TEXT.LABELS.SWITCH_TO_FAV_MODE,
-		);
+		this.toggleModeButtonEl.setAttribute("aria-label", UI_TEXT.LABELS.SWITCH_TO_FAV_MODE);
 
-		this.favoriteButtonEl = buttonContainer.createEl("button", {
-			cls: CSS_CLASSES.FAVORITE_BUTTON,
+		this.favoriteButtonEl = buttonContainer.createDiv({
+			cls: [CSS_CLASSES.FAVORITE_BUTTON, "clickable-icon"],
 			text: UI_TEXT.ICONS.HEART_EMPTY,
 		});
-		this.favoriteButtonEl.setAttribute("data-tooltip", "Add to Favorites");
+		this.favoriteButtonEl.setAttribute("aria-label", "Add to Favorites");
 
-		this.menuButtonEl = buttonContainer.createEl("button", {
-			cls: CSS_CLASSES.MENU_BUTTON,
+		this.menuButtonEl = buttonContainer.createDiv({
+			cls: [CSS_CLASSES.MENU_BUTTON, "clickable-icon"],
 		});
 		setIcon(this.menuButtonEl, UI_TEXT.ICONS.MENU);
+		this.menuButtonEl.setAttribute("aria-label", "Menu");
 
-		this.previousButtonEl = buttonContainer.createEl("button", {
-			cls: CSS_CLASSES.NEXT_BUTTON,
+		this.previousButtonEl = buttonContainer.createDiv({
+			cls: [CSS_CLASSES.NEXT_BUTTON, "clickable-icon"],
 			text: UI_TEXT.BUTTONS.PREV,
 		});
+		this.previousButtonEl.setAttribute("aria-label", "Previous Quote");
 
-		this.nextButtonEl = buttonContainer.createEl("button", {
-			cls: CSS_CLASSES.NEXT_BUTTON,
+		this.nextButtonEl = buttonContainer.createDiv({
+			cls: [CSS_CLASSES.NEXT_BUTTON, "clickable-icon"],
 			text: UI_TEXT.BUTTONS.NEXT,
 		});
+		this.nextButtonEl.setAttribute("aria-label", "Next Quote");
 
 		// --- EVENT HANDLERS ---
 		this.toggleModeButtonEl.onclick = () =>
@@ -113,12 +113,20 @@ export default class Gemmy extends Plugin {
 			callback: () => this.focusManager.toggleFocusMode(),
 		});
 
+		this.addCommand({
+			id: COMMANDS.TOGGLE_GEMMY.id,
+			name: COMMANDS.TOGGLE_GEMMY.name,
+			callback: () => this.toggle(),
+		});
+
 		this.addSettingTab(
 			new GemmySettingTab(this.app, this, this.dataManager),
 		);
 		this.quoteManager.resetIdleInterval();
 		this.makeDraggable(this.gemmyEl);
-		this.app.workspace.onLayoutReady(this.appear.bind(this));
+		this.app.workspace.onLayoutReady(() => {
+			this.appear();
+		});
 	}
 
 	showMainMenu(event: MouseEvent) {
@@ -256,12 +264,29 @@ export default class Gemmy extends Plugin {
 
 		document.body.appendChild(this.gemmyEl);
 		this.gemmyEl.show();
-		this.quoteManager.saySomething();
+
+		this.quoteManager.resetIdleInterval();
+
+		if (this.focusManager && this.focusManager.isFocusMode) {
+			this.chatBubbleEl.removeClass(CSS_CLASSES.HIDDEN);
+			this.focusManager.renderFocusUI();
+		} else {
+			this.quoteManager.saySomething();
+		}
+	}
+
+	toggle() {
+		if (this.appeared) {
+			this.disappear();
+		} else {
+			this.appear();
+		}
 	}
 
 	disappear() {
 		this.quoteManager.unload(); // Clear intervals/timeouts
 		this.chatBubbleEl.addClass(CSS_CLASSES.HIDDEN);
+		this.chatBubbleEl.removeClass("fade-out");
 		this.gemmyEl.hide();
 		this.appeared = false;
 	}
@@ -278,13 +303,15 @@ export default class Gemmy extends Plugin {
 			pos2 = 0,
 			pos3 = 0,
 			pos4 = 0;
+
 		const dragMouseDown = (e: MouseEvent) => {
 			e.preventDefault();
 			pos3 = e.clientX;
 			pos4 = e.clientY;
-			document.onmouseup = closeDragElement;
-			document.onmousemove = elementDrag;
+			activeDocument.addEventListener("mouseup", closeDragElement);
+			activeDocument.addEventListener("mousemove", elementDrag);
 		};
+
 		const elementDrag = (e: MouseEvent) => {
 			e.preventDefault();
 			pos1 = pos3 - e.clientX;
@@ -294,9 +321,10 @@ export default class Gemmy extends Plugin {
 			elmnt.style.top = elmnt.offsetTop - pos2 + "px";
 			elmnt.style.left = elmnt.offsetLeft - pos1 + "px";
 		};
+
 		const closeDragElement = async () => {
-			document.onmouseup = null;
-			document.onmousemove = null;
+			activeDocument.removeEventListener("mouseup", closeDragElement);
+			activeDocument.removeEventListener("mousemove", elementDrag);
 
 			// Save position
 			await this.dataManager.updateSettings({
@@ -306,6 +334,7 @@ export default class Gemmy extends Plugin {
 				},
 			});
 		};
+
 		this.imageEl.onmousedown = dragMouseDown;
 	}
 }

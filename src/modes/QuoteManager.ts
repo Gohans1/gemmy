@@ -8,7 +8,7 @@ export class QuoteManager {
 	isFavouriteMode = false;
 	quoteHistory: string[] = [];
 	historyIndex = 0;
-	bubbleTimeout: number;
+	bubbleTimeout: number | undefined;
 	idleIntervalId: number;
 
 	constructor(plugin: Gemmy) {
@@ -25,14 +25,14 @@ export class QuoteManager {
 			}
 			this.plugin.toggleModeButtonEl.innerText = UI_TEXT.ICONS.FAVORITE_MODE;
 			this.plugin.toggleModeButtonEl.setAttribute(
-				"data-tooltip",
+				"aria-label",
 				UI_TEXT.LABELS.SWITCH_TO_NORMAL_MODE,
 			);
 			new Notice(NOTICES.SWITCHED_TO_FAV);
 		} else {
 			this.plugin.toggleModeButtonEl.innerText = UI_TEXT.ICONS.NORMAL_MODE;
 			this.plugin.toggleModeButtonEl.setAttribute(
-				"data-tooltip",
+				"aria-label",
 				UI_TEXT.LABELS.SWITCH_TO_FAV_MODE,
 			);
 			new Notice(NOTICES.SWITCHED_TO_NORMAL);
@@ -45,37 +45,31 @@ export class QuoteManager {
 		const added = await this.plugin.dataManager.toggleFavorite(currentQuote);
 		if (added) {
 			this.plugin.favoriteButtonEl.innerText = UI_TEXT.ICONS.HEART_FILLED;
-			this.plugin.favoriteButtonEl.setAttribute(
-				"data-tooltip",
-				"Remove from Favorites",
-			);
+			this.plugin.favoriteButtonEl.setAttribute("aria-label", "Remove from Favorites");
 			new Notice(NOTICES.ADDED_TO_FAVORITES);
 		} else {
 			this.plugin.favoriteButtonEl.innerText = UI_TEXT.ICONS.HEART_EMPTY;
-			this.plugin.favoriteButtonEl.setAttribute(
-				"data-tooltip",
-				"Add to Favorites",
-			);
+			this.plugin.favoriteButtonEl.setAttribute("aria-label", "Add to Favorites");
 			new Notice(NOTICES.REMOVED_FROM_FAVORITES);
 		}
 	}
 
-	showPrevQuote() {
+	async showPrevQuote() {
 		if (this.historyIndex < this.quoteHistory.length - 1) {
 			this.historyIndex++;
 			const prevQuote = this.quoteHistory[this.historyIndex];
-			this.plugin.bubbleContentEl.innerText = prevQuote;
+			await this.renderQuote(prevQuote);
 			this.updateFavoriteButtonState(prevQuote);
 		} else {
 			new Notice(NOTICES.NO_MORE_HISTORY);
 		}
 	}
 
-	showNextQuote() {
+	async showNextQuote() {
 		if (this.historyIndex > 0) {
 			this.historyIndex--;
 			const nextQuote = this.quoteHistory[this.historyIndex];
-			this.plugin.bubbleContentEl.innerText = nextQuote;
+			await this.renderQuote(nextQuote);
 			this.updateFavoriteButtonState(nextQuote);
 		} else {
 			this.saySomething();
@@ -91,11 +85,11 @@ export class QuoteManager {
 		this.plugin.registerInterval(this.idleIntervalId);
 	}
 
-	saySomething() {
+	async saySomething() {
 		// Use optional chaining or check existence for focusManager
 		if (this.plugin.focusManager && this.plugin.focusManager.isFocusMode) return;
 		if (!this.plugin.appeared) return;
-		if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
+		this.clearBubbleTimeout();
 
 		let sourceQuotes = this.plugin.dataManager.allQuotes;
 		if (this.isFavouriteMode) {
@@ -116,43 +110,48 @@ export class QuoteManager {
 		this.quoteHistory.unshift(randomThing);
 		if (this.quoteHistory.length > 1000) this.quoteHistory.pop();
 
-		this.plugin.bubbleContentEl.empty();
-		this.plugin.bubbleContentEl.innerText = randomThing;
+		await this.renderQuote(randomThing);
 		this.updateFavoriteButtonState(randomThing);
 
+		// Removed auto-hide logic to keep the quote visible until the next one
+		// this.bubbleTimeout = window.setTimeout(() => { ... }, CONSTANTS.BUBBLE_DURATION);
+	}
+
+	clearBubbleTimeout() {
+		if (this.bubbleTimeout) {
+			window.clearTimeout(this.bubbleTimeout);
+			this.bubbleTimeout = undefined;
+		}
+	}
+
+	async renderQuote(quote: string) {
+		// Ensure bubble is visible when rendering a quote (e.g. navigation)
+		this.clearBubbleTimeout();
 		this.plugin.chatBubbleEl.removeClass(CSS_CLASSES.HIDDEN);
 		this.plugin.chatBubbleEl.removeClass("fade-out");
 		this.plugin.imageEl.setAttribute("src", this.plugin.getAvatarSource());
 
-		this.bubbleTimeout = window.setTimeout(() => {
-			this.plugin.chatBubbleEl.addClass("fade-out");
-			window.setTimeout(() => {
-				if (this.plugin.chatBubbleEl.hasClass("fade-out")) {
-					this.plugin.chatBubbleEl.addClass(CSS_CLASSES.HIDDEN);
-				}
-			}, 300);
-		}, CONSTANTS.BUBBLE_DURATION);
-	}
+		this.plugin.bubbleContentEl.empty();
+		this.plugin.bubbleContentEl.innerText = quote;
 
+		// Trigger bounce animation every time a quote is rendered
+		this.plugin.imageEl.classList.remove("gemmy-bounce");
+		void this.plugin.imageEl.offsetWidth; // Force reflow
+		this.plugin.imageEl.classList.add("gemmy-bounce");
+	}
 
 	updateFavoriteButtonState(quote: string) {
 		if (this.plugin.dataManager.isFavorite(quote)) {
 			this.plugin.favoriteButtonEl.innerText = UI_TEXT.ICONS.HEART_FILLED;
-			this.plugin.favoriteButtonEl.setAttribute(
-				"data-tooltip",
-				"Remove from Favorites",
-			);
+			this.plugin.favoriteButtonEl.setAttribute("aria-label", "Remove from Favorites");
 		} else {
 			this.plugin.favoriteButtonEl.innerText = UI_TEXT.ICONS.HEART_EMPTY;
-			this.plugin.favoriteButtonEl.setAttribute(
-				"data-tooltip",
-				"Add to Favorites",
-			);
+			this.plugin.favoriteButtonEl.setAttribute("aria-label", "Add to Favorites");
 		}
 	}
 
     unload() {
         if (this.idleIntervalId) clearInterval(this.idleIntervalId);
-        if (this.bubbleTimeout) clearTimeout(this.bubbleTimeout);
+        this.clearBubbleTimeout();
     }
 }
